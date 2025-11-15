@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/events", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const data = insertEventSchema.parse(req.body);
+      const data = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).parse(req.body);
       
       const [newEvent] = await db
         .insert(events)
@@ -452,6 +452,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating event:", error);
       res.status(400).json({ error: error.message || "Failed to create event" });
+    }
+  });
+
+  app.get("/api/events/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const [event] = await db.select().from(events).where(eq(events.id, id));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      res.json(event);
+    } catch (error: any) {
+      console.error("Error fetching event:", error);
+      res.status(500).json({ error: "Failed to fetch event" });
+    }
+  });
+
+  app.put("/api/events/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const [event] = await db.select().from(events).where(eq(events.id, id));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (event.hostUserId !== req.userId) {
+        return res.status(403).json({ error: "You can only edit your own events" });
+      }
+
+      const data = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).parse(req.body);
+
+      const [updatedEvent] = await db
+        .update(events)
+        .set(data)
+        .where(eq(events.id, id))
+        .returning();
+
+      res.json(updatedEvent);
+    } catch (error: any) {
+      console.error("Error updating event:", error);
+      res.status(400).json({ error: error.message || "Failed to update event" });
+    }
+  });
+
+  app.delete("/api/events/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const [event] = await db.select().from(events).where(eq(events.id, id));
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (event.hostUserId !== req.userId) {
+        return res.status(403).json({ error: "You can only delete your own events" });
+      }
+
+      await db.delete(events).where(eq(events.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting event:", error);
+      res.status(500).json({ error: "Failed to delete event" });
     }
   });
 
