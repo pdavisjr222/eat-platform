@@ -641,7 +641,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const data = insertJobPostSchema.parse(req.body);
+      const jobDataSchema = insertJobPostSchema.omit({ postedByUserId: true, vendorId: true });
+      const data = jobDataSchema.parse(req.body);
       
       const [newJob] = await db
         .insert(jobPosts)
@@ -655,6 +656,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating job post:", error);
       res.status(400).json({ error: error.message || "Failed to create job post" });
+    }
+  });
+
+  app.get("/api/jobs/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      
+      const job = await db
+        .select()
+        .from(jobPosts)
+        .where(eq(jobPosts.id, id))
+        .limit(1);
+
+      if (job.length === 0) {
+        return res.status(404).json({ error: "Job post not found" });
+      }
+
+      res.json(job[0]);
+    } catch (error: any) {
+      console.error("Error fetching job post:", error);
+      res.status(500).json({ error: "Failed to fetch job post" });
+    }
+  });
+
+  app.put("/api/jobs/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const jobDataSchema = insertJobPostSchema.omit({ postedByUserId: true, vendorId: true });
+      const data = jobDataSchema.parse(req.body);
+
+      const existing = await db
+        .select()
+        .from(jobPosts)
+        .where(eq(jobPosts.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Job post not found" });
+      }
+
+      if (existing[0].postedByUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this job post" });
+      }
+
+      const [updatedJob] = await db
+        .update(jobPosts)
+        .set(data)
+        .where(eq(jobPosts.id, id))
+        .returning();
+
+      res.json(updatedJob);
+    } catch (error: any) {
+      console.error("Error updating job post:", error);
+      res.status(400).json({ error: error.message || "Failed to update job post" });
+    }
+  });
+
+  app.delete("/api/jobs/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await db
+        .select()
+        .from(jobPosts)
+        .where(eq(jobPosts.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Job post not found" });
+      }
+
+      if (existing[0].postedByUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to delete this job post" });
+      }
+
+      await db.delete(jobPosts).where(eq(jobPosts.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting job post:", error);
+      res.status(500).json({ error: "Failed to delete job post" });
     }
   });
 

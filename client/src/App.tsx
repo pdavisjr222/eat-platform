@@ -25,6 +25,8 @@ import CreateForagingSpotPage from "@/pages/foraging/CreateForagingSpotPage";
 import EditForagingSpotPage from "@/pages/foraging/EditForagingSpotPage";
 import LearningPage from "@/pages/LearningPage";
 import JobBoardPage from "@/pages/JobBoardPage";
+import CreateJobPage from "@/pages/jobs/CreateJobPage";
+import EditJobPage from "@/pages/jobs/EditJobPage";
 import MessagesPage from "@/pages/MessagesPage";
 import ProfilePage from "@/pages/ProfilePage";
 
@@ -166,6 +168,22 @@ function Router() {
         <AuthGuard>
           <AuthenticatedLayout>
             <JobBoardPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/jobs/create">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <CreateJobPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/jobs/edit/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <EditJobPage />
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
