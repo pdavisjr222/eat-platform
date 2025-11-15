@@ -109,8 +109,7 @@ export default function MarketplacePage() {
           {filteredListings.map((listing) => (
             <Card
               key={listing.id}
-              className="hover-elevate cursor-pointer overflow-hidden"
-              onClick={() => setLocation(`/marketplace/${listing.id}`)}
+              className="hover-elevate overflow-hidden"
               data-testid={`card-listing-${listing.id}`}
             >
               <div className="aspect-video bg-muted relative">
@@ -130,7 +129,7 @@ export default function MarketplacePage() {
                 </Badge>
               </div>
               <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-2">{listing.title}</h3>
+                <h3 className="font-semibold text-lg mb-2" data-testid={`text-listing-title-${listing.id}`}>{listing.title}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                   {listing.description}
                 </p>
@@ -145,11 +144,19 @@ export default function MarketplacePage() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter className="px-4 py-3 bg-muted/30 border-t">
+              <CardFooter className="px-4 py-3 bg-muted/30 border-t flex items-center justify-between gap-2">
                 <div className="flex items-center text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 mr-1" />
                   {listing.locationText || "Location not specified"}
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation(`/marketplace/edit/${listing.id}`)}
+                  data-testid={`button-edit-listing-${listing.id}`}
+                >
+                  Edit
+                </Button>
               </CardFooter>
             </Card>
           ))}

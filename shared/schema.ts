@@ -427,7 +427,14 @@ export const insertResourceHubSchema = createInsertSchema(resourceHubs).omit({
   createdAt: true,
 });
 
-export const insertEventSchema = createInsertSchema(events).omit({
+export const insertEventSchema = createInsertSchema(events, {
+  startDateTime: z.union([z.date(), z.string().datetime()]).transform((val) => 
+    typeof val === "string" ? new Date(val) : val
+  ),
+  endDateTime: z.union([z.date(), z.string().datetime()]).transform((val) => 
+    typeof val === "string" ? new Date(val) : val
+  ),
+}).omit({
   id: true,
   createdAt: true,
 });
