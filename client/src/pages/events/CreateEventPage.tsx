@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { eventDateTimeToUTC } from "@/lib/datetime";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 const eventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).extend({
@@ -64,20 +65,20 @@ export default function CreateEventPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
-      const startDate = new Date(data.startDateTime);
-      const endDate = new Date(data.endDateTime);
-      
-      if (!isFinite(startDate.getTime()) || !isFinite(endDate.getTime())) {
-        throw new Error("Invalid date/time values");
+      try {
+        const startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
+        const endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
+        
+        const payload = {
+          ...data,
+          startDateTime: new Date(startDate),
+          endDateTime: new Date(endDate),
+        };
+        const res = await apiRequest("POST", "/api/events", payload);
+        return await res.json();
+      } catch (error) {
+        throw new Error("Invalid date/time or timezone values");
       }
-      
-      const payload = {
-        ...data,
-        startDateTime: startDate,
-        endDateTime: endDate,
-      };
-      const res = await apiRequest("POST", "/api/events", payload);
-      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });

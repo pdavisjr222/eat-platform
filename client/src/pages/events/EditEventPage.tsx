@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { eventDateTimeToUTC, utcToEventDateTime } from "@/lib/datetime";
 import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -47,25 +48,14 @@ export default function EditEventPage() {
     enabled: !!eventId,
   });
 
-  const formatLocalDatetime = (date: Date | string): string => {
-    const d = new Date(date);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
   const form = useForm<EditEventFormData>({
     resolver: zodResolver(editEventFormSchema),
     values: event ? {
       title: event.title,
       description: event.description,
       type: event.type,
-      startDateTime: formatLocalDatetime(event.startDateTime),
-      endDateTime: formatLocalDatetime(event.endDateTime),
+      startDateTime: utcToEventDateTime(event.startDateTime, event.timeZone),
+      endDateTime: utcToEventDateTime(event.endDateTime, event.timeZone),
       timeZone: event.timeZone,
       locationOnline: event.locationOnline,
       locationAddress: event.locationAddress,
@@ -77,20 +67,20 @@ export default function EditEventPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditEventFormData) => {
-      const startDate = new Date(data.startDateTime);
-      const endDate = new Date(data.endDateTime);
-      
-      if (!isFinite(startDate.getTime()) || !isFinite(endDate.getTime())) {
-        throw new Error("Invalid date/time values");
+      try {
+        const startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
+        const endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
+        
+        const payload = {
+          ...data,
+          startDateTime: new Date(startDate),
+          endDateTime: new Date(endDate),
+        };
+        const res = await apiRequest("PUT", `/api/events/${eventId}`, payload);
+        return await res.json();
+      } catch (error) {
+        throw new Error("Invalid date/time or timezone values");
       }
-      
-      const payload = {
-        ...data,
-        startDateTime: startDate,
-        endDateTime: endDate,
-      };
-      const res = await apiRequest("PUT", `/api/events/${eventId}`, payload);
-      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
