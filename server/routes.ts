@@ -201,6 +201,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/listings/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const listing = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+
+      if (listing.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+
+      res.json(listing[0]);
+    } catch (error: any) {
+      console.error("Error fetching listing:", error);
+      res.status(500).json({ error: "Failed to fetch listing" });
+    }
+  });
+
   app.get("/api/listings/nearby", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const recentListings = await db
@@ -234,7 +254,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/listings", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const data = insertListingSchema.parse(req.body);
+      const listingDataSchema = insertListingSchema.omit({ ownerUserId: true });
+      const data = listingDataSchema.parse(req.body);
       
       const [newListing] = await db
         .insert(listings)
@@ -248,6 +269,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating listing:", error);
       res.status(400).json({ error: error.message || "Failed to create listing" });
+    }
+  });
+
+  app.put("/api/listings/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const listingDataSchema = insertListingSchema.omit({ ownerUserId: true });
+      const data = listingDataSchema.parse(req.body);
+
+      const existing = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+
+      if (existing[0].ownerUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this listing" });
+      }
+
+      const [updatedListing] = await db
+        .update(listings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(listings.id, id))
+        .returning();
+
+      res.json(updatedListing);
+    } catch (error: any) {
+      console.error("Error updating listing:", error);
+      res.status(400).json({ error: error.message || "Failed to update listing" });
+    }
+  });
+
+  app.delete("/api/listings/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+
+      if (existing[0].ownerUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to delete this listing" });
+      }
+
+      await db.delete(listings).where(eq(listings.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting listing:", error);
+      res.status(500).json({ error: "Failed to delete listing" });
     }
   });
 

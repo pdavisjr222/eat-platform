@@ -20,7 +20,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { data: listings, isLoading } = useQuery<Listing[]>({
-    queryKey: ["/api/listings", { type: selectedType, category: selectedCategory, search: searchQuery }],
+    queryKey: ["/api/listings"],
   });
 
   const filteredListings = listings?.filter((listing) => {

@@ -13,6 +13,8 @@ import LoginPage from "@/pages/auth/LoginPage";
 import SignupPage from "@/pages/auth/SignupPage";
 import DashboardPage from "@/pages/DashboardPage";
 import MarketplacePage from "@/pages/MarketplacePage";
+import CreateListingPage from "@/pages/marketplace/CreateListingPage";
+import EditListingPage from "@/pages/marketplace/EditListingPage";
 import ForagingMapPage from "@/pages/ForagingMapPage";
 import VendorsPage from "@/pages/VendorsPage";
 import MembersPage from "@/pages/MembersPage";
@@ -64,6 +66,22 @@ function Router() {
         <AuthGuard>
           <AuthenticatedLayout>
             <MarketplacePage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/marketplace/create">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <CreateListingPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/marketplace/edit/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <EditListingPage />
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
