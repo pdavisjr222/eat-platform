@@ -15,7 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft } from "lucide-react";
 
-const eventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true });
+const eventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).extend({
+  startDateTime: z.string(),
+  endDateTime: z.string(),
+});
 
 type EventFormData = z.infer<typeof eventFormSchema>;
 
@@ -25,14 +28,31 @@ export default function CreateEventPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const formatLocalDatetime = (date: Date): string => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(10, 0, 0, 0);
+  
+  const tomorrowEnd = new Date(tomorrow);
+  tomorrowEnd.setHours(12, 0, 0, 0);
+
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
       description: "",
       type: "workshop",
-      startDateTime: new Date(),
-      endDateTime: new Date(),
+      startDateTime: formatLocalDatetime(tomorrow),
+      endDateTime: formatLocalDatetime(tomorrowEnd),
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locationOnline: false,
       locationAddress: "",
@@ -44,7 +64,19 @@ export default function CreateEventPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
-      const res = await apiRequest("POST", "/api/events", data);
+      const startDate = new Date(data.startDateTime);
+      const endDate = new Date(data.endDateTime);
+      
+      if (!isFinite(startDate.getTime()) || !isFinite(endDate.getTime())) {
+        throw new Error("Invalid date/time values");
+      }
+      
+      const payload = {
+        ...data,
+        startDateTime: startDate,
+        endDateTime: endDate,
+      };
+      const res = await apiRequest("POST", "/api/events", payload);
       return await res.json();
     },
     onSuccess: () => {
@@ -160,8 +192,6 @@ export default function CreateEventPage() {
                         <Input
                           type="datetime-local"
                           {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
                           data-testid="input-start-datetime"
                         />
                       </FormControl>
@@ -180,8 +210,6 @@ export default function CreateEventPage() {
                         <Input
                           type="datetime-local"
                           {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
                           data-testid="input-end-datetime"
                         />
                       </FormControl>

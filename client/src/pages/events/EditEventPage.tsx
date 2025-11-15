@@ -27,7 +27,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const editEventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true });
+const editEventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).extend({
+  startDateTime: z.string(),
+  endDateTime: z.string(),
+});
 
 type EditEventFormData = z.infer<typeof editEventFormSchema>;
 
@@ -44,14 +47,25 @@ export default function EditEventPage() {
     enabled: !!eventId,
   });
 
+  const formatLocalDatetime = (date: Date | string): string => {
+    const d = new Date(date);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const form = useForm<EditEventFormData>({
     resolver: zodResolver(editEventFormSchema),
     values: event ? {
       title: event.title,
       description: event.description,
       type: event.type,
-      startDateTime: new Date(event.startDateTime),
-      endDateTime: new Date(event.endDateTime),
+      startDateTime: formatLocalDatetime(event.startDateTime),
+      endDateTime: formatLocalDatetime(event.endDateTime),
       timeZone: event.timeZone,
       locationOnline: event.locationOnline,
       locationAddress: event.locationAddress,
@@ -63,7 +77,19 @@ export default function EditEventPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditEventFormData) => {
-      const res = await apiRequest("PUT", `/api/events/${eventId}`, data);
+      const startDate = new Date(data.startDateTime);
+      const endDate = new Date(data.endDateTime);
+      
+      if (!isFinite(startDate.getTime()) || !isFinite(endDate.getTime())) {
+        throw new Error("Invalid date/time values");
+      }
+      
+      const payload = {
+        ...data,
+        startDateTime: startDate,
+        endDateTime: endDate,
+      };
+      const res = await apiRequest("PUT", `/api/events/${eventId}`, payload);
       return await res.json();
     },
     onSuccess: () => {
@@ -234,8 +260,6 @@ export default function EditEventPage() {
                         <Input
                           type="datetime-local"
                           {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
                           data-testid="input-start-datetime"
                         />
                       </FormControl>
@@ -254,8 +278,6 @@ export default function EditEventPage() {
                         <Input
                           type="datetime-local"
                           {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ""}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
                           data-testid="input-end-datetime"
                         />
                       </FormControl>
