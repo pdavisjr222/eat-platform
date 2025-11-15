@@ -1,0 +1,466 @@
+Build a full-stack web application called “E.A.T. – Ecology Agriculture Trade”, a secure, global membership platform for nature lovers, gardeners, and farmers who value sustainability, eco-friendly living, and indigenous, clean, green, healthy lifestyles.
+
+1. Tech Stack & Architecture
+
+Use TypeScript where possible.
+
+Frontend: React (or Next.js if supported), responsive design (mobile-first).
+
+Backend: Node.js + Express (or Next.js API routes).
+
+Database: PostgreSQL with an ORM (e.g., Prisma).
+
+Auth: JWT-based email/password auth with password hashing, plus role-based permissions (user, moderator, admin).
+
+Security:
+
+Hardened API endpoints.
+
+Input validation and rate limiting on sensitive routes.
+
+Design the system so that it can later integrate a blockchain or Web3 layer to record key marketplace and reputation transactions (e.g., credits, trades) for transparency and tamper-resistance. For now, create a clean service layer and stub interfaces for a future blockchain module.
+
+2. Core Concepts & Entities
+
+Define database models for at least the following:
+
+User
+
+id, name, email, passwordHash
+
+location (country, region, city)
+
+geographicRegion (e.g., “Caribbean”, “North America”, “Africa”, etc.)
+
+bio, profileImageUrl
+
+interests (tags: gardening, farming, foraging, eco-tourism, clean energy, etc.)
+
+referralCode, referredBy, creditBalance
+
+roles (user, vendor, moderator, admin)
+
+MemberProfile
+
+1–1 with User, extended info:
+
+skills (gardening, permaculture, herbalism, solar install, etc.)
+
+offerings (products/services they typically sell/trade)
+
+links (website, social)
+
+Listing (for marketplace: sale / trade / barter / rent / lease)
+
+id, ownerUserId
+
+type: “sell”, “buy”, “trade”, “barter”, “rent”, “lease”
+
+category: “food”, “seeds”, “plants”, “spices”, “handmade”, “realEstate”, “ecoTravel”, “service”
+
+title, description, images[]
+
+price (if applicable), currency
+
+location (geo + text)
+
+availabilityStatus (active, pending, closed)
+
+rating (aggregated from reviews)
+
+Vendor
+
+id, linkedUserId
+
+name, description, logoUrl
+
+type: “ecoFriendly”, “indigenous”, “serviceProvider”, “accommodation”
+
+website, contact info
+
+verified flag
+
+rating
+
+Coupon / Deal
+
+id, vendorId
+
+title, description
+
+discountType (percentage / fixed)
+
+code
+
+validFrom, validTo
+
+termsAndConditions
+
+ForagingSpot
+
+id, createdByUserId
+
+geoLocation (lat, lng)
+
+title (e.g., “Mango Tree”, “Breadfruit Tree”, “Wild Callaloo”)
+
+plantType / species
+
+description
+
+images[]
+
+edibleParts, seasonality
+
+benefits (short text: nutritional and traditional/medicinal use)
+
+accessNotes (public roadside, private but accessible, ask permission, etc.)
+
+createdAt, updatedAt
+
+GardenClub
+
+id, name
+
+description, city, country, region
+
+contact info
+
+mapLocation (lat, lng)
+
+meetingSchedule
+
+website or social link
+
+SeedBank
+
+id, name, location
+
+description
+
+managedByUserId (or group)
+
+seedsAvailable (text field or link to a simple seed inventory)
+
+WaterSource / EnergyHub
+
+id
+
+type: “waterSource”, “solarHub”, “windHub”, “microHydro”
+
+location (lat, lng)
+
+description
+
+access rules / notes
+
+Event
+
+id, title, description
+
+hostUserId or hostClubId
+
+type: “workshop”, “farmersMarket”, “ecoTour”, “onlineWebinar”
+
+startDateTime, endDateTime, timeZone
+
+location (online or physical address + geo)
+
+capacity (optional)
+
+TrainingModule
+
+id, title, category (e.g., “Seed Bank Basics”, “Start a Farmers Market”, “Intro to Solar”, “Wind & Hydro 101”)
+
+difficultyLevel
+
+content (Markdown or HTML)
+
+videoUrl (optional)
+
+MealPlan / Recipe
+
+id, createdByUserId
+
+dietaryPreference (vegan, vegetarian, gluten-free, ital, etc.)
+
+title, description
+
+ingredients[]
+
+instructions
+
+nutritionSummary (optional)
+
+ShoppingList
+
+id, userId
+
+linkedMealPlanId (optional)
+
+items[] (ingredient name, quantity, unit)
+
+ChatMessage
+
+id, senderUserId, recipientUserId OR groupId
+
+messageType: text, image, link
+
+content
+
+createdAt
+
+Review
+
+id, reviewerUserId
+
+subjectType: “listing”, “vendor”, “service”, “accommodation”
+
+subjectId
+
+rating (1–5)
+
+comment
+
+createdAt
+
+JobPost
+
+id, postedByUserId or vendorId
+
+title, description
+
+jobType (part-time, full-time, freelance, seasonal)
+
+category: “farmLabor”, “construction”, “media”, “ecoTourism”, etc.
+
+location, compensationInfo
+
+CreditTransaction
+
+id, userId
+
+type: “referralBonus”, “purchase”, “rewardRedemption”, “adminAdjustment”
+
+amount (positive or negative)
+
+description
+
+createdAt
+
+3. Key Features & Pages
+3.1 Onboarding & Membership
+
+Sign up / log in with email/password.
+
+Users choose their country, region, and primary interests (gardening, farming, foraging, eco-travel, clean energy, etc.).
+
+Option to enter a referral code; save referral relationships and give new members and referrers credits.
+
+Simple dashboard on login showing:
+
+Upcoming events
+
+New marketplace listings nearby
+
+New foraging spots nearby
+
+Credit balance and referral link
+
+3.2 Member Profiles & Networking
+
+Profile page:
+
+Photo, bio, location, interests, skills, offerings.
+
+Tabs for: Listings, Reviews, Activity, Garden Clubs / Seed Banks they belong to.
+
+Member directory with filters:
+
+By region, country, interests, skills.
+
+Direct messaging (chat) between members.
+
+Implement 1-to-1 real-time chat using WebSockets or a similar solution.
+
+For now, just design a simple chat UI and backend endpoints; video calls can be stubbed with a placeholder UI and comments on how to integrate WebRTC/Twilio later.
+
+3.3 Marketplace (Multi-purpose Eco-Commerce)
+
+Browse Listings with filters:
+
+Category, region, price range, listing type (sell/buy/trade/barter/rent/lease).
+
+Each listing page:
+
+Title, description, images, price or trade terms.
+
+Location, seller profile, reviews, “message seller” button.
+
+Users can:
+
+Create new listings for food, seeds, plants, handmade indigenous items, eco-services, eco-accommodations, real estate, or eco-travel experiences.
+
+Manage their own listings (edit, pause, close).
+
+Vendor Directory:
+
+List eco-friendly and indigenous vendors with filters by category and region.
+
+Show vendor details, website, coupons, and aggregated rating.
+
+Coupons & Deals section:
+
+Users can see active deals from vendors.
+
+Filter by category and region.
+
+3.4 Foraging Map – Find Free Food in the Wild
+
+Interactive map page using a mapping library.
+
+Users can:
+
+See ForagingSpot pins for wild or public fruit trees, edible plants, herbs, etc.
+
+Click a pin to see:
+
+Photo(s)
+
+Name/species
+
+Edible parts, seasonality
+
+Benefits (nutritional/medicinal notes)
+
+Access notes
+
+Add a new ForagingSpot:
+
+Upload a photo, mark the plant on the map, add description and benefits.
+
+Include filters for plant type, region, and season.
+
+3.5 Garden Clubs, Seed Banks, & Water/Energy Hubs
+
+Garden Club Map & Directory:
+
+Map view of GardenClubs with basic info and contact details.
+
+List view with filters by country and city.
+
+Seed Bank Tracker:
+
+List known SeedBanks with location and description.
+
+Simple display of what kinds of seeds they focus on.
+
+Water/Energy Hub Map:
+
+Map view showing WaterSource and EnergyHub entries.
+
+Each pin shows type, description, and notes.
+
+3.6 Learning / Training Hub
+
+Training Modules section:
+
+Categories:
+
+How to start a Seed Bank
+
+How to start a Farmers’ Market
+
+Basics of Clean Energy (solar, wind, hydro)
+
+Setting up eco-homes
+
+Trade & transport logistics basics
+
+Each module has:
+
+Title, category, text content (Markdown or HTML), and optional video link.
+
+DIY & How-To Video Sharing:
+
+A simple content feed where members can post links to DIY/how-to videos (YouTube, Vimeo, etc.) or upload short clips, along with written tips for clean, green, healthy living.
+
+3.7 Meal Planning & Shopping Lists
+
+Basic meal planner:
+
+User chooses dietary preferences (e.g., vegan, ital, gluten-free, low-sugar).
+
+Allow members to create and save simple meal plans (e.g., 3–7 days).
+
+Auto-generate a shopping list from selected meal plans (unique ingredients + quantities).
+
+Shopping list can be downloaded or printed.
+
+3.8 Events & Job Board
+
+Event Calendar:
+
+Show upcoming events (workshops, farmers’ markets, eco-tours, webinars).
+
+Filter by region and category.
+
+Event detail page with description, registration link (or external link).
+
+Job Board:
+
+List JobPosts for local labor (farm help, construction, eco-tourism roles, etc.).
+
+Users can filter by region and category.
+
+3.9 Reviews, Ratings & Credits
+
+Users can review listings, vendors, services, and accommodations (1–5 stars + comments).
+
+Show average ratings on listing/vendor cards and detail pages.
+
+Credits system:
+
+Track CreditTransactions.
+
+Award credits for:
+
+Successful referrals (when a referred user signs up).
+
+Completing certain actions (e.g., adding first foraging spot, creating a training module).
+
+Allow credits to be redeemed for marketplace discounts or other rewards (logic can be stubbed).
+
+4. Regions & Global Structure
+
+Everything should be organized by geographic region:
+
+Filter members, listings, foraging spots, events, vendors, garden clubs, etc. by region/country.
+
+Make it easy to:
+
+Sign up and join the community.
+
+Share food, knowledge, and resources.
+
+Refer family and friends and earn credits.
+
+5. Implementation Notes
+
+Focus on clean, modular code and a clear folder structure:
+
+frontend/, backend/, db/ or similar.
+
+Include seed scripts to populate:
+
+A few demo users, vendors, garden clubs, seed banks, foraging spots, training modules, events, and listings.
+
+Use a simple UI design but keep it modern and easy to extend.
+
+Document in a README:
+
+How to run the app locally.
+
+How to configure environment variables.
+
+Which parts are prepared for future blockchain integration (e.g., credits and marketplace transaction logging).
