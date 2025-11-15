@@ -109,14 +109,13 @@ export default function JobBoardPage() {
           {filteredJobs.map((job) => (
             <Card
               key={job.id}
-              className="hover-elevate cursor-pointer"
-              onClick={() => setLocation(`/jobs/${job.id}`)}
+              className="hover-elevate"
               data-testid={`card-job-${job.id}`}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-xl mb-2">{job.title}</h3>
+                    <h3 className="font-semibold text-xl mb-2" data-testid={`text-job-title-${job.id}`}>{job.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                       {job.description}
                     </p>
@@ -147,8 +146,13 @@ export default function JobBoardPage() {
                 </div>
               </CardContent>
               <CardFooter className="px-6 py-3 bg-muted/30 border-t">
-                <Button variant="ghost" size="sm">
-                  View Details
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation(`/jobs/edit/${job.id}`)}
+                  data-testid={`button-edit-job-${job.id}`}
+                >
+                  Edit Job
                 </Button>
               </CardFooter>
             </Card>
