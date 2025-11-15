@@ -1,71 +1,147 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
 import { z } from "zod";
-import { insertForagingSpotSchema } from "@shared/schema";
+import { insertForagingSpotSchema, type ForagingSpot } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const foragingSpotFormSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
+const editForagingSpotFormSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
 
-type ForagingSpotFormData = z.infer<typeof foragingSpotFormSchema>;
+type EditForagingSpotFormData = z.infer<typeof editForagingSpotFormSchema>;
 
 const plantTypes = ["fruit", "vegetable", "herb", "nut", "berry", "mushroom", "edible-green"];
 
-export default function CreateForagingSpotPage() {
+export default function EditForagingSpotPage() {
+  const params = useParams();
+  const spotId = params.id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const form = useForm<ForagingSpotFormData>({
-    resolver: zodResolver(foragingSpotFormSchema),
-    defaultValues: {
-      title: "",
-      plantType: "fruit",
-      species: "",
-      description: "",
-      latitude: undefined,
-      longitude: undefined,
-      edibleParts: "",
-      seasonality: "",
-      benefits: "",
-      accessNotes: "",
-      images: [],
-    },
+  const { data: spot, isLoading } = useQuery<ForagingSpot>({
+    queryKey: [`/api/foraging-spots/${spotId}`],
+    enabled: !!spotId,
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: ForagingSpotFormData) => {
-      const res = await apiRequest("POST", "/api/foraging-spots", data);
+  const form = useForm<EditForagingSpotFormData>({
+    resolver: zodResolver(editForagingSpotFormSchema),
+    values: spot ? {
+      title: spot.title,
+      plantType: spot.plantType,
+      species: spot.species,
+      description: spot.description,
+      latitude: spot.latitude,
+      longitude: spot.longitude,
+      edibleParts: spot.edibleParts,
+      seasonality: spot.seasonality,
+      benefits: spot.benefits,
+      accessNotes: spot.accessNotes,
+      images: spot.images,
+    } : undefined,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditForagingSpotFormData) => {
+      const res = await apiRequest("PUT", `/api/foraging-spots/${spotId}`, data);
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foraging-spots"] });
       toast({
         title: "Success!",
-        description: "Your foraging spot has been added.",
+        description: "Your foraging spot has been updated.",
       });
       setLocation("/foraging-map");
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create foraging spot",
+        description: error.message || "Failed to update foraging spot",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = (data: ForagingSpotFormData) => {
-    createMutation.mutate(data);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/foraging-spots/${spotId}`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/foraging-spots"] });
+      toast({
+        title: "Spot deleted",
+        description: "Your foraging spot has been deleted successfully.",
+      });
+      setLocation("/foraging-map");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete foraging spot",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: EditForagingSpotFormData) => {
+    updateMutation.mutate(data);
   };
+
+  const onDelete = () => {
+    deleteMutation.mutate();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Skeleton className="h-10 w-48 mb-4" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!spot) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Foraging spot not found</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -80,8 +156,39 @@ export default function CreateForagingSpotPage() {
       </Button>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-serif">Add Foraging Spot</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+          <CardTitle className="text-3xl font-serif">Edit Foraging Spot</CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                data-testid="button-delete"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Foraging Spot?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this foraging spot. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  data-testid="button-confirm-delete"
+                >
+                  {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -315,11 +422,11 @@ export default function CreateForagingSpotPage() {
               <div className="flex gap-4">
                 <Button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={updateMutation.isPending}
                   data-testid="button-submit"
                 >
-                  {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add Foraging Spot
+                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
                 </Button>
                 <Button
                   type="button"

@@ -21,6 +21,8 @@ import MembersPage from "@/pages/MembersPage";
 import EventsPage from "@/pages/EventsPage";
 import CreateEventPage from "@/pages/events/CreateEventPage";
 import EditEventPage from "@/pages/events/EditEventPage";
+import CreateForagingSpotPage from "@/pages/foraging/CreateForagingSpotPage";
+import EditForagingSpotPage from "@/pages/foraging/EditForagingSpotPage";
 import LearningPage from "@/pages/LearningPage";
 import JobBoardPage from "@/pages/JobBoardPage";
 import MessagesPage from "@/pages/MessagesPage";
@@ -92,6 +94,22 @@ function Router() {
         <AuthGuard>
           <AuthenticatedLayout>
             <ForagingMapPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/foraging-map/create">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <CreateForagingSpotPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/foraging-map/edit/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <EditForagingSpotPage />
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>

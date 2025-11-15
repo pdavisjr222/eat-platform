@@ -385,7 +385,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/foraging-spots", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const data = insertForagingSpotSchema.parse(req.body);
+      const spotDataSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
+      const data = spotDataSchema.parse(req.body);
       
       const [newSpot] = await db
         .insert(foragingSpots)
@@ -399,6 +400,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating foraging spot:", error);
       res.status(400).json({ error: error.message || "Failed to create foraging spot" });
+    }
+  });
+
+  app.get("/api/foraging-spots/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      
+      const spot = await db
+        .select()
+        .from(foragingSpots)
+        .where(eq(foragingSpots.id, id))
+        .limit(1);
+
+      if (spot.length === 0) {
+        return res.status(404).json({ error: "Foraging spot not found" });
+      }
+
+      res.json(spot[0]);
+    } catch (error: any) {
+      console.error("Error fetching foraging spot:", error);
+      res.status(500).json({ error: "Failed to fetch foraging spot" });
+    }
+  });
+
+  app.put("/api/foraging-spots/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const spotDataSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
+      const data = spotDataSchema.parse(req.body);
+
+      const existing = await db
+        .select()
+        .from(foragingSpots)
+        .where(eq(foragingSpots.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Foraging spot not found" });
+      }
+
+      if (existing[0].createdByUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this spot" });
+      }
+
+      const [updatedSpot] = await db
+        .update(foragingSpots)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(foragingSpots.id, id))
+        .returning();
+
+      res.json(updatedSpot);
+    } catch (error: any) {
+      console.error("Error updating foraging spot:", error);
+      res.status(400).json({ error: error.message || "Failed to update foraging spot" });
+    }
+  });
+
+  app.delete("/api/foraging-spots/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await db
+        .select()
+        .from(foragingSpots)
+        .where(eq(foragingSpots.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return res.status(404).json({ error: "Foraging spot not found" });
+      }
+
+      if (existing[0].createdByUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to delete this spot" });
+      }
+
+      await db.delete(foragingSpots).where(eq(foragingSpots.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting foraging spot:", error);
+      res.status(500).json({ error: "Failed to delete foraging spot" });
     }
   });
 
