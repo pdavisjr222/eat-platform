@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#22c55e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="E.A.T." />
+
+    <!-- Manifest and Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png.svg" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png.svg" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- SEO Meta Tags -->
+    <title>E.A.T. - Ecology Agriculture Trade</title>
+    <meta name="description" content="Global community for sustainable agriculture and eco-friendly living. Trade, share, and connect with nature lovers, gardeners, and farmers worldwide." />
+    <meta name="keywords" content="sustainable agriculture, ecology, trading, community, farmers, gardening, eco-friendly" />
+    <meta name="author" content="E.A.T. Platform" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+
+    <!-- Open Graph / Social Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eat-platform.com/" />
+    <meta property="og:title" content="E.A.T. - Ecology Agriculture Trade" />
+    <meta property="og:description" content="Global community for sustainable agriculture and eco-friendly living" />
+    <meta property="og:image" content="/icon-512x512.png.svg" />
+    <meta property="og:site_name" content="E.A.T." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://eat-platform.com/" />
+    <meta name="twitter:title" content="E.A.T. - Ecology Agriculture Trade" />
+    <meta name="twitter:description" content="Global community for sustainable agriculture and eco-friendly living" />
+    <meta name="twitter:image" content="/icon-512x512.png.svg" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://eat-platform.com/" />
+
+    <!-- PWA Startup Image (for splash screens) -->
+    <meta name="msapplication-starturl" content="/" />
+    <meta name="msapplication-TileColor" content="#22c55e" />
+    <meta name="msapplication-TileImage" content="/icon-144x144.png.svg" />
+
+    <!-- Additional PWA Enhancements -->
+    <link rel="preload" href="/icon-192x192.png.svg" as="image" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful:', registration.scope);
+          }).catch(error => {
+            console.log('ServiceWorker registration failed:', error);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

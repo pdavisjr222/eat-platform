@@ -1,0 +1,194 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - develop
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  test:
+    name: Test All Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Run type checking
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: false
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Upload test coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            packages/*/coverage
+          retention-days: 14
+
+  lint-changed:
+    name: Lint Changed Files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            packages/**/*.{ts,tsx,js,jsx}
+          files_ignore: |
+            **/*.test.{ts,tsx,js,jsx}
+            **/*.spec.{ts,tsx,js,jsx}
+
+      - name: Lint changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+          npm run lint
+
+  test-affected:
+    name: Test Affected Packages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test affected packages
+        run: npm run test
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for vulnerabilities
+        run: npm audit --audit-level=high
+
+  comment-status:
+    name: Comment Test Status
+    runs-on: ubuntu-latest
+    needs: [test, lint-changed, test-affected]
+    if: always() && github.event_name == 'pull_request'
+
+    steps:
+      - name: Comment PR with status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testResult = '${{ needs.test.result }}';
+            const lintResult = '${{ needs.lint-changed.result }}';
+            const affectedResult = '${{ needs.test-affected.result }}';
+
+            let status = '✅ All checks passed!';
+            let emoji = '✅';
+
+            if (testResult !== 'success' || lintResult !== 'success' || affectedResult !== 'success') {
+              status = '❌ Some checks failed';
+              emoji = '❌';
+            }
+
+            const body = `## ${emoji} Test Results
+
+            - **Tests**: ${testResult === 'success' ? '✅' : '❌'} ${testResult}
+            - **Linting**: ${lintResult === 'success' ? '✅' : '❌'} ${lintResult}
+            - **Affected Packages**: ${affectedResult === 'success' ? '✅' : '❌'} ${affectedResult}
+
+            ${status}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

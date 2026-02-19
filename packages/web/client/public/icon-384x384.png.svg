@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="384" height="384" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
+  <rect width="384" height="384" fill="#22c55e"/>
+  <g transform="translate(192, 192)">
+    <path d="M 0,-134 Q 72,-36 54,38 Q 38,96 -16,134 Q -72,96 -54,16 Q -38,-58 0,-134 Z" fill="#ffffff" stroke="#f0f0f0" stroke-width="2"/>
+    <line x1="0" y1="-134" x2="0" y2="134" stroke="#e0e0e0" stroke-width="3"/>
+  </g>
+</svg>

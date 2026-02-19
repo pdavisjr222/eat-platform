@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - E.A.T. Platform</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .icon svg {
+      width: 60px;
+      height: 60px;
+      stroke: #fff;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    p {
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .retry-btn {
+      background: #fff;
+      color: #10b981;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+
+    .status {
+      margin-top: 2rem;
+      font-size: 0.875rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+        <line x1="1" y1="1" x2="23" y2="23" stroke-linecap="round" stroke-width="2" />
+      </svg>
+    </div>
+
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Don't worry, you can still access some features while offline.</p>
+
+    <button class="retry-btn" onclick="location.reload()">
+      Try Again
+    </button>
+
+    <div class="status">
+      Checking connection<span id="dots">.</span>
+    </div>
+  </div>
+
+  <script>
+    // Animated dots
+    let dotCount = 0;
+    setInterval(() => {
+      dotCount = (dotCount + 1) % 4;
+      document.getElementById('dots').textContent = '.'.repeat(dotCount || 1);
+    }, 500);
+
+    // Auto-retry when online
+    window.addEventListener('online', () => {
+      location.reload();
+    });
+
+    // Update status
+    function updateStatus() {
+      const status = document.querySelector('.status');
+      if (navigator.onLine) {
+        status.textContent = 'Connection restored! Reloading...';
+        setTimeout(() => location.reload(), 1000);
+      }
+    }
+
+    setInterval(updateStatus, 3000);
+  </script>
+</body>
+</html>

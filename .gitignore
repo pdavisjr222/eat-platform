@@ -4,3 +4,56 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Build artifacts
+build
+.next
+.expo
+.turbo
+
+# Testing
+coverage
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Deployment
+.vercel
+.railway
+*.deploy.log
+
+# Mobile
+google-play-service-account.json
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+
+# Temporary files
+*.tmp
+*.cache
+
+# Local SQLite database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Windows artifacts
+nul
+
+# Local tool settings
+.claude/
+.local/

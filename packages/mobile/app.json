@@ -1,0 +1,76 @@
+{
+  "expo": {
+    "name": "E.A.T. Platform",
+    "slug": "eat-platform",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "eat",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#22c55e"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "bundleIdentifier": "org.projecteat.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby foraging spots and marketplace listings.",
+        "NSLocationAlwaysUsageDescription": "We need your location to show nearby foraging spots and marketplace listings.",
+        "NSCameraUsageDescription": "Upload photos of your listings and foraging spots.",
+        "NSPhotoLibraryUsageDescription": "Choose photos from your library to share.",
+        "NSPhotoLibraryAddUsageDescription": "Save photos to your library.",
+        "NSMicrophoneUsageDescription": "Enable audio for video calls with community members."
+      }
+    },
+    "android": {
+      "package": "org.projecteat.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#22c55e"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-image-picker",
+      "expo-location",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#22c55e",
+          "sounds": [
+            "./assets/notification-sound.wav"
+          ]
+        }
+      ],
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "TBD"
+      }
+    }
+  }
+}
