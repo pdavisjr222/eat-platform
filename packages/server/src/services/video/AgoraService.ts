@@ -1,7 +1,7 @@
-import { AccessToken, RtcRole } from "agora-access-token";
+import { RtcTokenBuilder, RtcRole } from "agora-access-token";
 import { db } from "../../db";
-import { videoCalls, videoCallParticipants, users } from "@eat/shared/schema";
-import { eq, and } from "drizzle-orm";
+import { videoCalls, videoCallParticipants, users } from "../../schema";
+import { eq, and, isNull } from "drizzle-orm";
 import { config } from "../../config";
 
 const AGORA_TOKEN_EXPIRATION = 24 * 60 * 60; // 24 hours in seconds
@@ -71,18 +71,16 @@ export class AgoraService {
       // Generate token with user ID as numeric UID
       const uid = parseInt(userId.replace(/\D/g, "0")) || 0;
       const rtcRole = role === "publisher" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+      const expirationTimeInSeconds = Math.floor(Date.now() / 1000) + AGORA_TOKEN_EXPIRATION;
 
-      const token = new AccessToken(
+      const tokenString = RtcTokenBuilder.buildTokenWithUid(
         this.appId,
         this.appCertificate,
         channelName,
-        uid
+        uid,
+        rtcRole,
+        expirationTimeInSeconds
       );
-
-      token.addRtcService(rtcRole);
-      token.expire(AGORA_TOKEN_EXPIRATION);
-
-      const tokenString = token.build();
 
       return {
         token: tokenString,
@@ -256,7 +254,7 @@ export class AgoraService {
         .where(
           and(
             eq(videoCallParticipants.callId, callId),
-            eq(videoCallParticipants.leftAt, null)
+            isNull(videoCallParticipants.leftAt)
           )
         );
 
@@ -267,7 +265,7 @@ export class AgoraService {
           .where(
             and(
               eq(videoCallParticipants.callId, callId),
-              eq(videoCallParticipants.leftAt, null)
+              isNull(videoCallParticipants.leftAt)
             )
           );
       }
@@ -411,7 +409,7 @@ export class AgoraService {
           and(
             eq(videoCallParticipants.callId, callId),
             eq(videoCallParticipants.userId, userId),
-            eq(videoCallParticipants.leftAt, null)
+            isNull(videoCallParticipants.leftAt)
           )
         );
 

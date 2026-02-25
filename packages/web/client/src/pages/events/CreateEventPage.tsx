@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { insertEventSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,9 +15,18 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { eventDateTimeToUTC } from "@/lib/datetime";
 import { Loader2, ArrowLeft } from "lucide-react";
 
-const eventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).extend({
+const eventFormSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  type: z.string().min(1),
   startDateTime: z.string(),
   endDateTime: z.string(),
+  timeZone: z.string().min(1),
+  locationOnline: z.boolean().default(false),
+  locationAddress: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  capacity: z.number().int().optional().nullable(),
 });
 
 type EventFormData = z.infer<typeof eventFormSchema>;

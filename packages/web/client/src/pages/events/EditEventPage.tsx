@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { z } from "zod";
-import { insertEventSchema, type Event } from "@shared/schema";
+import { type Event } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -28,9 +28,18 @@ import { eventDateTimeToUTC, utcToEventDateTime } from "@/lib/datetime";
 import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const editEventFormSchema = insertEventSchema.omit({ hostUserId: true, hostClubId: true, imageUrl: true }).extend({
+const editEventFormSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  type: z.string().min(1),
   startDateTime: z.string(),
   endDateTime: z.string(),
+  timeZone: z.string().min(1),
+  locationOnline: z.boolean().default(false),
+  locationAddress: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  capacity: z.number().int().optional().nullable(),
 });
 
 type EditEventFormData = z.infer<typeof editEventFormSchema>;
@@ -38,7 +47,7 @@ type EditEventFormData = z.infer<typeof editEventFormSchema>;
 const eventTypes = ["workshop", "farmersMarket", "ecoTour", "onlineWebinar"];
 
 export default function EditEventPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const eventId = params.id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();

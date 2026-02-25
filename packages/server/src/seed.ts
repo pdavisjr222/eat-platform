@@ -10,7 +10,7 @@ import {
   events,
   trainingModules,
   jobPosts,
-} from "@eat/shared/schema";
+} from "./schema";
 
 export async function seedDatabase() {
   console.log("Starting database seed...");

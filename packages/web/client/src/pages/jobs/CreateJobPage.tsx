@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { insertJobPostSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,7 +13,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft } from "lucide-react";
 
-const jobFormSchema = insertJobPostSchema.omit({ postedByUserId: true, vendorId: true });
+const jobFormSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  jobType: z.string().min(1),
+  category: z.string().min(1),
+  locationText: z.string().optional().nullable(),
+  compensationInfo: z.string().optional().nullable(),
+});
 
 type JobFormData = z.infer<typeof jobFormSchema>;
 

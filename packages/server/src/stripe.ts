@@ -1,12 +1,12 @@
 import Stripe from "stripe";
 import { config } from "./config";
 import { db } from "./db";
-import { users, payments, creditTransactions, subscriptionPlans } from "@eat/shared/schema";
-import { eq } from "drizzle-orm";
+import { users, payments, creditTransactions, subscriptionPlans } from "./schema";
+import { eq, sql } from "drizzle-orm";
 
 // Initialize Stripe (will be null if no API key)
 const stripe = config.stripeSecretKey && !config.stripeSecretKey.includes("PLACEHOLDER")
-  ? new Stripe(config.stripeSecretKey, { apiVersion: "2025-03-31.basil" })
+  ? new Stripe(config.stripeSecretKey, { apiVersion: "2025-11-17.clover" })
   : null;
 
 export function isStripeConfigured(): boolean {
@@ -335,10 +335,7 @@ export async function handleStripeWebhook(
           await db
             .update(users)
             .set({
-              creditBalance: db
-                .select({ val: users.creditBalance })
-                .from(users)
-                .where(eq(users.id, userId)),
+              creditBalance: sql`${users.creditBalance} + ${credits}`,
             })
             .where(eq(users.id, userId));
         }

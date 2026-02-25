@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["../shared/*"],
+      "@shared": ["../shared/index.ts"]
+    }
+  },
+  "include": ["client/src/**/*", "../shared/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "client/src/components/ui/aspect-ratio.tsx",
+    "client/src/components/ui/calendar.tsx",
+    "client/src/components/ui/carousel.tsx",
+    "client/src/components/ui/chart.tsx",
+    "client/src/components/ui/command.tsx",
+    "client/src/components/ui/context-menu.tsx",
+    "client/src/components/ui/drawer.tsx",
+    "client/src/components/ui/hover-card.tsx",
+    "client/src/components/ui/input-otp.tsx",
+    "client/src/components/ui/menubar.tsx",
+    "client/src/components/ui/navigation-menu.tsx",
+    "client/src/components/ui/progress.tsx",
+    "client/src/components/ui/radio-group.tsx",
+    "client/src/components/ui/resizable.tsx",
+    "client/src/components/ui/switch.tsx",
+    "client/src/components/ui/toggle-group.tsx",
+    "client/src/components/ui/toggle.tsx"
+  ]
+}

@@ -22,18 +22,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertListingSchema, type Listing } from "@shared/schema";
+import { type Listing } from "@shared/schema";
 import { z } from "zod";
 
-const editListingFormSchema = insertListingSchema.omit({ ownerUserId: true }).extend({
+const editListingFormSchema = z.object({
+  type: z.string().min(1),
+  category: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  images: z.array(z.string()).optional().nullable(),
   price: z.coerce.number().min(0).optional().or(z.literal("")),
+  currency: z.string().optional().nullable(),
+  locationText: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  availabilityStatus: z.string().optional(),
 });
 
 type EditListingFormData = z.infer<typeof editListingFormSchema>;
 
 export default function EditListingPage() {
   const [, setLocation] = useLocation();
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const listingId = params.id;
   const { toast } = useToast();
 

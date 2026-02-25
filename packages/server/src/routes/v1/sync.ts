@@ -52,7 +52,7 @@ import {
   vendorReferrals,
   videoCalls,
   videoCallParticipants,
-} from "@eat/shared/schema";
+} from "../../schema";
 import { eq, and, gt, sql, or } from "drizzle-orm";
 import type { Response } from "express";
 

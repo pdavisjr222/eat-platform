@@ -37,31 +37,54 @@ EcologyAgricultureTrade/
 
 ---
 
-## Current Status (Updated: 2026-02-18)
+## Current Status (Updated: 2026-02-25)
 
 ### ✅ Complete
 - Turborepo monorepo + 4 packages wired
 - Database schema — 31 tables with sync metadata on all
-- Full REST API — 68 endpoints across 11 categories
+- Full REST API — 68 endpoints split across 14 modular route files (routes/ directory)
 - Auth system — JWT (7-day), bcrypt (10 rounds), email verification, password reset
-- Real-time messaging — Socket.IO (6 events each direction)
-- Offline sync — SyncManager, SQLiteStorage (mobile), IndexedDB (web)
-- PWA — service worker, manifest, 9 icon sizes, install prompts
+- Real-time messaging — Socket.IO (6 events each direction), typing auto-stop after 5s
+- Offline sync — SyncManager, SQLiteStorage (mobile), IndexedDB (web), both initialized on boot
+- PWA — service worker, manifest, 9 icon sizes, install prompts, ErrorBoundary
 - Redis caching service
 - Agora video service (token generation, 1-on-1 & group)
 - Vendor referral service (8-char codes, 2% recurring commissions)
 - FCM notification service
 - CI/CD — GitHub Actions → Railway (server) + Vercel (web) + EAS (mobile)
-- Mobile: welcome screen, auth layout, login screen, Expo config
+- Mobile: full auth flow (login, signup, forgot-password, verify-email, reset-password)
+- Mobile: tab navigation — 5 tabs (Home, Marketplace, Foraging Map, Messages, Profile)
+- Mobile: all tab screens wired to real API via TanStack Query (11 hooks in src/lib/hooks.ts)
+- Mobile: SecureStore token persistence, auth loading state, SQLiteStorage initialized on boot
+- Mobile: API client (src/lib/api.ts) with ApiRequestError, typed authApi endpoints
+- Web: typed API client (lib/api.ts), IndexedDB init on App mount, ErrorBoundary in main.tsx
+- Web: auth.ts has both Zustand store (reactive) and plain getToken/setToken exports (for API use)
+- Server: request timeout middleware (30s), Stripe webhook secret production validation
+- CI/CD: fixed railway link bug, fixed health check URL (/api/health), fixed EAS profile
+- CI/CD: type checking step now runs tsc --noEmit per package (was running lint twice)
+- turbo.json: updated from deprecated `pipeline` key to `tasks` (Turbo v2)
+- Database: PostgreSQL (Neon serverless) for production, SQLite fallback for local dev
+  - `packages/server/src/schema.ts` — PG schema (31 tables, pgTable, jsonb, boolean, timestamp)
+  - `packages/server/src/db.ts` — env-based: DATABASE_URL→Neon, else→SQLite
+  - All 22 server files updated from `@eat/shared/schema` imports → `./schema` / `../schema`
+  - `packages/server/drizzle.config.ts` — auto-selects PG or SQLite dialect
+  - `DATABASE_URL` added to production required vars in config.ts
 
-### ⏳ Pending
-- Mobile tab navigation (structure referenced, not built)
-- Mobile screens beyond auth (marketplace, map, messaging, etc.)
-- Replace placeholder SVG icons with branded PNGs
-- Replace placeholder screenshots with real UI
-- Firebase/FCM credentials configuration
-- HTTPS deployment + device testing
-- App store submission
+### ⏳ Pending (Required Before Launch)
+- **BLOCKER:** Create mobile assets directory — icon.png, splash.png, adaptive-icon.png, etc. (see packages/mobile/assets/README.md)
+- **BLOCKER:** Set `extra.eas.projectId` in app.json (currently "TBD") — run `eas init` to get UUID
+- Set `DATABASE_URL` in Railway dashboard — same value as in `packages/server/.env` (Neon project: `eat-platform`, ID: `calm-voice-93662463`)
+- Configure external services: Firebase, Agora, Stripe, Resend, Redis, Google Maps (all have .env.example docs)
+- Replace PWA placeholder SVG icons with real PNG files
+- App store submission: replace placeholder values in eas.json (Apple ID, Team ID, etc.)
+- Mobile: react-native-maps real interactive map (currently placeholder UI)
+- Mobile: Socket.IO real-time messaging in app (currently REST polling via /api/conversations)
+- Mobile: image upload flow for listings and foraging spots
+- Device testing on physical iOS + Android
+
+### 🚫 Not Required for MVP
+- JWT refresh tokens (7-day tokens handled via SecureStore + /api/auth/me on boot)
+- Listing/review counts on profile stats (TODOs marked in profile.tsx)
 
 ---
 
@@ -105,9 +128,12 @@ try {
 
 ## Database
 
-**Schema location:** `packages/shared/schema.ts`
+**Shared schema (SQLite — mobile offline):** `packages/shared/schema.ts`
+**Server schema (PostgreSQL — production):** `packages/server/src/schema.ts`
 **Total tables:** 31 (25 main + 6 infrastructure)
 **ORM:** Drizzle ORM
+**Production adapter:** `@neondatabase/serverless` (Neon HTTP) via `DATABASE_URL`
+**Dev fallback:** `better-sqlite3` via `DATABASE_PATH` (when `DATABASE_URL` is unset)
 
 **All tables include sync metadata:**
 ```typescript
@@ -280,14 +306,25 @@ router.post("/api/resource",
 
 ```
 app/
-├── _layout.tsx         # Root Stack layout
-├── index.tsx           # Welcome screen → /(auth)/login
-└── (auth)/
-    ├── _layout.tsx     # Auth layout (headerShown: false)
-    └── login.tsx       # Login screen
+├── _layout.tsx              # Root: SQLiteStorage init → QueryClient → AuthGuard
+├── index.tsx                # Welcome screen → /(auth)/login
+├── (auth)/
+│   ├── _layout.tsx          # Auth Stack (headerShown: false)
+│   ├── login.tsx            # ✅ Full API integration + SecureStore
+│   ├── signup.tsx           # ✅ Full API integration
+│   ├── forgot-password.tsx  # ✅ Email reset + success state
+│   ├── verify-email.tsx     # ✅ 60s resend countdown
+│   └── reset-password.tsx   # ✅ Deep-link token from params
+└── (tabs)/
+    ├── _layout.tsx          # ✅ Bottom tab bar (5 tabs, Ionicons)
+    ├── index.tsx            # ✅ Home — greeting, notif badge, upcoming events
+    ├── marketplace.tsx      # ✅ Real listings — search, filter, pull-to-refresh
+    ├── map.tsx              # ✅ Real foraging spots — season tags, verified badge
+    ├── messages.tsx         # ✅ Real conversations — unread badges, relative time
+    └── profile.tsx          # ✅ Real user data — sign out, stats, menu
 ```
 
-**⚠️ Tab navigation not yet built** — (tabs) group is referenced but screens not implemented.
+**Auth state flow:** SQLiteStorage init → SecureStore token check → `/api/auth/me` → route to (tabs) or (auth)/login
 
 ---
 

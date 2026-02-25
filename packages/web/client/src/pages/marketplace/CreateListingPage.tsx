@@ -11,11 +11,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertListingSchema, type InsertListing } from "@shared/schema";
 import { z } from "zod";
 
-const createListingFormSchema = insertListingSchema.omit({ ownerUserId: true }).extend({
+const createListingFormSchema = z.object({
+  type: z.string().min(1),
+  category: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  images: z.array(z.string()).optional().nullable(),
   price: z.coerce.number().min(0).optional().or(z.literal("")),
+  currency: z.string().optional().nullable(),
+  locationText: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  availabilityStatus: z.string().optional(),
 });
 
 type CreateListingFormData = z.infer<typeof createListingFormSchema>;

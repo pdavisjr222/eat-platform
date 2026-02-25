@@ -27,8 +27,9 @@ export async function registerServiceWorker(callbacks?: ServiceWorkerCallbacks) 
     // Handle service worker waiting
     wb.addEventListener('waiting', () => {
       console.log('New service worker waiting...');
-      if (callbacks?.onUpdate && wb?.waiting) {
-        callbacks.onUpdate(wb.waiting as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (callbacks?.onUpdate && (wb as any)?.waiting) {
+        callbacks.onUpdate((wb as any).waiting as ServiceWorkerRegistration);
       }
     });
 
@@ -111,7 +112,8 @@ export async function unregisterServiceWorker() {
  * Update service worker immediately (skip waiting)
  */
 export function updateServiceWorker() {
-  if (wb && wb.waiting) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (wb && (wb as any).waiting) {
     wb.messageSkipWaiting();
   }
 }

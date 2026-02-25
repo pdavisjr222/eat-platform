@@ -11,7 +11,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../../db";
 import { authenticateToken, type AuthRequest } from "../../auth";
-import { deviceRegistry } from "@eat/shared/schema";
+import { deviceRegistry } from "../../schema";
 import { eq, and } from "drizzle-orm";
 import type { Response } from "express";
 

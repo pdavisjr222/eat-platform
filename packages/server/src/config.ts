@@ -39,6 +39,10 @@ export const config = {
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000", 10), // 15 minutes
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100", 10),
 
+  // Database
+  databaseUrl: process.env.DATABASE_URL || "",
+  databasePath: process.env.DATABASE_PATH || "./db.sqlite",
+
   // Pagination defaults
   defaultPageSize: 20,
   maxPageSize: 100,
@@ -46,12 +50,19 @@ export const config = {
 
 // Validate required config in production
 if (config.nodeEnv === "production") {
-  const required = ["JWT_SECRET", "RESEND_API_KEY", "GOOGLE_MAPS_API_KEY"];
-  const missing = required.filter((key) => !process.env[key]);
-
-  if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(", ")}`);
+  // Hard required — server cannot function without these
+  const hardRequired = ["JWT_SECRET", "DATABASE_URL"];
+  const hardMissing = hardRequired.filter((key) => !process.env[key]);
+  if (hardMissing.length > 0) {
+    console.error(`FATAL: Missing required environment variables: ${hardMissing.join(", ")}`);
     process.exit(1);
+  }
+
+  // Soft required — features degrade gracefully without these
+  const softRequired = ["RESEND_API_KEY", "GOOGLE_MAPS_API_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_SECRET_KEY", "AGORA_APP_ID", "FIREBASE_PROJECT_ID"];
+  const softMissing = softRequired.filter((key) => !process.env[key]);
+  if (softMissing.length > 0) {
+    console.warn(`WARNING: Missing optional environment variables (features will be disabled): ${softMissing.join(", ")}`);
   }
 }
 

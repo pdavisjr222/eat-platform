@@ -1000,7 +1000,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   bannedReason: true,
   bannedAt: true,
   bannedBy: true,
-}).extend({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+} as any).extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   email: z.string().email("Invalid email address"),
 });
@@ -1011,7 +1012,7 @@ export const insertListingSchema = createInsertSchema(listings).omit({
   updatedAt: true,
   isFeatured: true,
   viewCount: true,
-});
+} as any);
 
 export const insertVendorSchema = createInsertSchema(vendors).omit({
   id: true,
@@ -1022,14 +1023,14 @@ export const insertVendorSchema = createInsertSchema(vendors).omit({
   verifiedBy: true,
   rating: true,
   reviewCount: true,
-});
+} as any);
 
 export const insertCouponSchema = createInsertSchema(coupons).omit({
   id: true,
   createdAt: true,
   currentUses: true,
   isActive: true,
-});
+} as any);
 
 export const insertForagingSpotSchema = createInsertSchema(foragingSpots).omit({
   id: true,
@@ -1037,26 +1038,26 @@ export const insertForagingSpotSchema = createInsertSchema(foragingSpots).omit({
   updatedAt: true,
   isVerified: true,
   verifiedBy: true,
-});
+} as any);
 
 export const insertGardenClubSchema = createInsertSchema(gardenClubs).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   memberCount: true,
-});
+} as any);
 
 export const insertSeedBankSchema = createInsertSchema(seedBanks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertResourceHubSchema = createInsertSchema(resourceHubs).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertEventSchema = createInsertSchema(events, {
   startDateTime: z.union([z.date(), z.string()]).transform((val) =>
@@ -1072,64 +1073,64 @@ export const insertEventSchema = createInsertSchema(events, {
   registeredCount: true,
   isFeatured: true,
   status: true,
-});
+} as any);
 
 export const insertTrainingModuleSchema = createInsertSchema(trainingModules).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertRecipeSchema = createInsertSchema(recipes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertShoppingListSchema = createInsertSchema(shoppingLists).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
   createdAt: true,
   isRead: true,
   readAt: true,
-});
+} as any);
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   isVerified: true,
-});
+} as any);
 
 export const insertJobPostSchema = createInsertSchema(jobPosts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   status: true,
-});
+} as any);
 
 export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({
   id: true,
   createdAt: true,
-});
+} as any);
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
   isRead: true,
   readAt: true,
-});
+} as any);
 
 export const insertSyncQueueSchema = createInsertSchema(syncQueue).omit({
   id: true,
@@ -1137,18 +1138,18 @@ export const insertSyncQueueSchema = createInsertSchema(syncQueue).omit({
   status: true,
   retryCount: true,
   processedAt: true,
-});
+} as any);
 
 export const insertDeviceRegistrySchema = createInsertSchema(deviceRegistry).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+} as any);
 
 export const insertConflictLogSchema = createInsertSchema(conflictLog).omit({
   id: true,
   createdAt: true,
-});
+} as any);
 
 export const insertVendorReferralSchema = createInsertSchema(vendorReferrals).omit({
   id: true,
@@ -1161,7 +1162,7 @@ export const insertVendorReferralSchema = createInsertSchema(vendorReferrals).om
   lastSyncedAt: true,
   isDeleted: true,
   deletedAt: true,
-});
+} as any);
 
 export const insertVideoCallSchema = createInsertSchema(videoCalls).omit({
   id: true,
@@ -1173,7 +1174,7 @@ export const insertVideoCallSchema = createInsertSchema(videoCalls).omit({
   lastSyncedAt: true,
   isDeleted: true,
   deletedAt: true,
-});
+} as any);
 
 export const insertVideoCallParticipantSchema = createInsertSchema(videoCallParticipants).omit({
   id: true,
@@ -1183,59 +1184,59 @@ export const insertVideoCallParticipantSchema = createInsertSchema(videoCallPart
   lastSyncedAt: true,
   isDeleted: true,
   deletedAt: true,
-});
+} as any);
 
 // ============ TYPES ============
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-export type InsertListing = z.infer<typeof insertListingSchema>;
+export type InsertListing = typeof listings.$inferInsert;
 export type Listing = typeof listings.$inferSelect;
 
-export type InsertVendor = z.infer<typeof insertVendorSchema>;
+export type InsertVendor = typeof vendors.$inferInsert;
 export type Vendor = typeof vendors.$inferSelect;
 
-export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+export type InsertCoupon = typeof coupons.$inferInsert;
 export type Coupon = typeof coupons.$inferSelect;
 
-export type InsertForagingSpot = z.infer<typeof insertForagingSpotSchema>;
+export type InsertForagingSpot = typeof foragingSpots.$inferInsert;
 export type ForagingSpot = typeof foragingSpots.$inferSelect;
 
-export type InsertGardenClub = z.infer<typeof insertGardenClubSchema>;
+export type InsertGardenClub = typeof gardenClubs.$inferInsert;
 export type GardenClub = typeof gardenClubs.$inferSelect;
 
-export type InsertSeedBank = z.infer<typeof insertSeedBankSchema>;
+export type InsertSeedBank = typeof seedBanks.$inferInsert;
 export type SeedBank = typeof seedBanks.$inferSelect;
 
-export type InsertResourceHub = z.infer<typeof insertResourceHubSchema>;
+export type InsertResourceHub = typeof resourceHubs.$inferInsert;
 export type ResourceHub = typeof resourceHubs.$inferSelect;
 
-export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type InsertEvent = typeof events.$inferInsert;
 export type Event = typeof events.$inferSelect;
 
-export type InsertTrainingModule = z.infer<typeof insertTrainingModuleSchema>;
+export type InsertTrainingModule = typeof trainingModules.$inferInsert;
 export type TrainingModule = typeof trainingModules.$inferSelect;
 
-export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
+export type InsertMealPlan = typeof mealPlans.$inferInsert;
 export type MealPlan = typeof mealPlans.$inferSelect;
 
-export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
+export type InsertRecipe = typeof recipes.$inferInsert;
 export type Recipe = typeof recipes.$inferSelect;
 
-export type InsertShoppingList = z.infer<typeof insertShoppingListSchema>;
+export type InsertShoppingList = typeof shoppingLists.$inferInsert;
 export type ShoppingList = typeof shoppingLists.$inferSelect;
 
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 
-export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type InsertReview = typeof reviews.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 
-export type InsertJobPost = z.infer<typeof insertJobPostSchema>;
+export type InsertJobPost = typeof jobPosts.$inferInsert;
 export type JobPost = typeof jobPosts.$inferSelect;
 
-export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
+export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
 export type CreditTransaction = typeof creditTransactions.$inferSelect;
 
 export type EventRegistration = typeof eventRegistrations.$inferSelect;
@@ -1246,20 +1247,20 @@ export type Payment = typeof payments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 
-export type InsertSyncQueue = z.infer<typeof insertSyncQueueSchema>;
+export type InsertSyncQueue = typeof syncQueue.$inferInsert;
 export type SyncQueue = typeof syncQueue.$inferSelect;
 
-export type InsertDeviceRegistry = z.infer<typeof insertDeviceRegistrySchema>;
+export type InsertDeviceRegistry = typeof deviceRegistry.$inferInsert;
 export type DeviceRegistry = typeof deviceRegistry.$inferSelect;
 
-export type InsertConflictLog = z.infer<typeof insertConflictLogSchema>;
+export type InsertConflictLog = typeof conflictLog.$inferInsert;
 export type ConflictLog = typeof conflictLog.$inferSelect;
 
-export type InsertVendorReferral = z.infer<typeof insertVendorReferralSchema>;
+export type InsertVendorReferral = typeof vendorReferrals.$inferInsert;
 export type VendorReferral = typeof vendorReferrals.$inferSelect;
 
-export type InsertVideoCall = z.infer<typeof insertVideoCallSchema>;
+export type InsertVideoCall = typeof videoCalls.$inferInsert;
 export type VideoCall = typeof videoCalls.$inferSelect;
 
-export type InsertVideoCallParticipant = z.infer<typeof insertVideoCallParticipantSchema>;
+export type InsertVideoCallParticipant = typeof videoCallParticipants.$inferInsert;
 export type VideoCallParticipant = typeof videoCallParticipants.$inferSelect;

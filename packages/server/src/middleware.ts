@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { config } from "./config";
 import { db } from "./db";
-import { users, auditLogs } from "@eat/shared/schema";
+import { users, auditLogs } from "./schema";
 import { eq } from "drizzle-orm";
 import { verifyToken, type AuthRequest } from "./auth";
 
@@ -284,6 +284,21 @@ export function buildPaginatedResponse<T>(
       hasNext: pagination.page < totalPages,
       hasPrev: pagination.page > 1,
     },
+  };
+}
+
+// Request timeout middleware
+export function requestTimeout(timeoutMs: number = 30000) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(503).json({ error: "Request timeout" });
+      }
+    }, timeoutMs);
+
+    res.on("finish", () => clearTimeout(timeout));
+    res.on("close", () => clearTimeout(timeout));
+    next();
   };
 }
 

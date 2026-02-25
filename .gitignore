@@ -57,3 +57,5 @@ nul
 # Local tool settings
 .claude/
 .local/
+.agents/
+skills-lock.json

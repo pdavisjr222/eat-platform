@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && npm run build --workspace=packages/server"
+buildCommand = "npm install && npx turbo run build --filter=./packages/shared --filter=./packages/server"
 
 [deploy]
 startCommand = "cd packages/server && NODE_ENV=production node dist/index.js"

@@ -5,12 +5,12 @@ import {
   creditTransactions,
   vendors,
   users
-} from "@eat/shared/schema";
+} from "../../schema";
 import type {
   VendorReferral,
   InsertVendorReferral,
   CreditTransaction
-} from "@eat/shared/schema";
+} from "../../schema";
 
 /**
  * ReferralService - Manages vendor referral system

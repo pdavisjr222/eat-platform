@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { z } from "zod";
-import { insertForagingSpotSchema, type ForagingSpot } from "@shared/schema";
+import { type ForagingSpot } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -26,14 +26,26 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const editForagingSpotFormSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
+const editForagingSpotFormSchema = z.object({
+  title: z.string().min(1),
+  plantType: z.string().min(1),
+  species: z.string().optional().nullable(),
+  description: z.string().min(1),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  edibleParts: z.string().optional().nullable(),
+  seasonality: z.string().optional().nullable(),
+  benefits: z.string().optional().nullable(),
+  accessNotes: z.string().optional().nullable(),
+  images: z.array(z.string()).optional().nullable(),
+});
 
 type EditForagingSpotFormData = z.infer<typeof editForagingSpotFormSchema>;
 
 const plantTypes = ["fruit", "vegetable", "herb", "nut", "berry", "mushroom", "edible-green"];
 
 export default function EditForagingSpotPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const spotId = params.id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();

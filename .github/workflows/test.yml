@@ -47,7 +47,10 @@ jobs:
         continue-on-error: false
 
       - name: Run type checking
-        run: npm run lint
+        run: |
+          npx tsc --noEmit -p packages/shared/tsconfig.json
+          npx tsc --noEmit -p packages/server/tsconfig.json
+          npx tsc --noEmit -p packages/web/tsconfig.json
         continue-on-error: false
 
       - name: Run tests

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes/index";
+import { requestTimeout } from "./middleware";
 
 const log = console.log;
 
@@ -54,6 +55,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Apply request timeout middleware
+  app.use(requestTimeout(30000));
+
   const server = await registerRoutes(app);
 
   // Global error handler

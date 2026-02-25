@@ -12,7 +12,7 @@
 
 import admin from "firebase-admin";
 import { db } from "../../db";
-import { deviceRegistry, notifications } from "@eat/shared/schema";
+import { deviceRegistry, notifications } from "../../schema";
 import { eq } from "drizzle-orm";
 
 interface FirebaseConfig {

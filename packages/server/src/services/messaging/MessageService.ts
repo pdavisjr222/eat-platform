@@ -2,9 +2,9 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import type { Server as HTTPServer } from "http";
 import { verifyToken } from "../../auth";
 import { db } from "../../db";
-import { chatMessages, users, deviceRegistry } from "@eat/shared/schema";
+import { chatMessages, users, deviceRegistry } from "../../schema";
 import { eq, and, or, desc } from "drizzle-orm";
-import type { InsertChatMessage, ChatMessage } from "@eat/shared/schema";
+import type { InsertChatMessage, ChatMessage } from "../../schema";
 
 // Types
 interface AuthenticatedSocket extends Socket {
@@ -298,6 +298,20 @@ export class MessageService {
       this.io?.to(`user:${payload.recipientUserId}`).emit(event, {
         userId: senderId,
       });
+
+      // Auto-stop typing indicator after 5 seconds
+      if (isTyping) {
+        const typingKey = `typing:${senderId}:${payload.recipientUserId}`;
+        if ((socket as any)._typingTimers?.[typingKey]) {
+          clearTimeout((socket as any)._typingTimers[typingKey]);
+        }
+        if (!(socket as any)._typingTimers) (socket as any)._typingTimers = {};
+        (socket as any)._typingTimers[typingKey] = setTimeout(() => {
+          const recipientRoom = `user:${payload.recipientUserId}`;
+          socket.to(recipientRoom).emit("typing:stop", { userId: senderId });
+          delete (socket as any)._typingTimers[typingKey];
+        }, 5000);
+      }
     } catch (error) {
       console.error("Error handling typing indicator:", error);
     }
@@ -378,11 +392,10 @@ export class MessageService {
             body: messageContent.length > 100
               ? `${messageContent.substring(0, 100)}...`
               : messageContent,
-            data: {
-              type: "message",
-              senderId,
-              timestamp: new Date().toISOString(),
-            },
+          }, {
+            type: "message",
+            senderId,
+            timestamp: new Date().toISOString(),
           });
         }
       }

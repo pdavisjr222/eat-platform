@@ -15,7 +15,7 @@ export async function comparePasswords(password: string, hash: string): Promise<
 }
 
 export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn as `${number}${"s" | "m" | "h" | "d"}` });
 }
 
 export function verifyToken(token: string): { userId: string } | null {

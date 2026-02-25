@@ -1,13 +1,22 @@
 import { defineConfig } from "drizzle-kit";
+import dotenv from "dotenv";
 
-// SQLite-based local development database.
-// This creates/uses a file called "db.sqlite" in the project root.
-export default defineConfig({
-  out: "./migrations",
-  schema: "../shared/schema.ts",
-  dialect: "sqlite",
-  dbCredentials: {
-    // For SQLite, this is just the file name / path.
-    url: "./db.sqlite",
-  },
-});
+dotenv.config();
+
+export default process.env.DATABASE_URL
+  ? defineConfig({
+      out: "./migrations/pg",
+      schema: "./src/schema.ts",
+      dialect: "postgresql",
+      dbCredentials: {
+        url: process.env.DATABASE_URL,
+      },
+    })
+  : defineConfig({
+      out: "./migrations/sqlite",
+      schema: "../shared/schema.ts",
+      dialect: "sqlite",
+      dbCredentials: {
+        url: process.env.DATABASE_PATH || "./db.sqlite",
+      },
+    });

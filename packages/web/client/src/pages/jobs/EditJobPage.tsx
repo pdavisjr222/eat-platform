@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { z } from "zod";
-import { insertJobPostSchema, type JobPost } from "@shared/schema";
+import { type JobPost } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -26,7 +26,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const editJobFormSchema = insertJobPostSchema.omit({ postedByUserId: true, vendorId: true });
+const editJobFormSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  jobType: z.string().min(1),
+  category: z.string().min(1),
+  locationText: z.string().optional().nullable(),
+  compensationInfo: z.string().optional().nullable(),
+});
 
 type EditJobFormData = z.infer<typeof editJobFormSchema>;
 
@@ -34,7 +41,7 @@ const jobTypes = ["full-time", "part-time", "contract", "volunteer", "internship
 const categories = ["farming", "gardening", "forestry", "education", "conservation", "research", "sales", "other"];
 
 export default function EditJobPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const jobId = params.id;
   const [, setLocation] = useLocation();
   const { toast } = useToast();

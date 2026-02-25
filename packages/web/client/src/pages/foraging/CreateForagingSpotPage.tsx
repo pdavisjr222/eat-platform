@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { insertForagingSpotSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,7 +13,19 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, ArrowLeft } from "lucide-react";
 
-const foragingSpotFormSchema = insertForagingSpotSchema.omit({ createdByUserId: true });
+const foragingSpotFormSchema = z.object({
+  title: z.string().min(1),
+  plantType: z.string().min(1),
+  species: z.string().optional().nullable(),
+  description: z.string().min(1),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  edibleParts: z.string().optional().nullable(),
+  seasonality: z.string().optional().nullable(),
+  benefits: z.string().optional().nullable(),
+  accessNotes: z.string().optional().nullable(),
+  images: z.array(z.string()).optional().nullable(),
+});
 
 type ForagingSpotFormData = z.infer<typeof foragingSpotFormSchema>;
 

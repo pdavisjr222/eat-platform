@@ -1,10 +1,25 @@
+import { neon } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "@eat/shared/schema";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import * as pgSchema from "./schema";
+import * as sqliteSchema from "@eat/shared/schema";
 
-// DATABASE_PATH lets Railway (or any host) point to a persistent volume.
-// Falls back to ./db.sqlite for local development.
-const dbPath = process.env.DATABASE_PATH || "./db.sqlite";
-const sqlite = new Database(dbPath);
+/**
+ * Database connection — auto-selects adapter:
+ *   DATABASE_URL set  → Neon serverless PostgreSQL (Railway production)
+ *   DATABASE_URL unset → better-sqlite3 (local development)
+ *
+ * The db export is typed as `any` to allow both adapters to share the same
+ * variable. In practice Railway always sets DATABASE_URL so PG runs in prod.
+ */
 
-export const db = drizzle(sqlite, { schema });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const db: any = process.env.DATABASE_URL
+  ? drizzleNeon(neon(process.env.DATABASE_URL), { schema: pgSchema })
+  : drizzleSqlite(
+      new Database(process.env.DATABASE_PATH || "./db.sqlite"),
+      { schema: sqliteSchema }
+    );
+
+export type DB = typeof db;

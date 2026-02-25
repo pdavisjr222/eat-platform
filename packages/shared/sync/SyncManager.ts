@@ -280,11 +280,11 @@ export class SyncManager {
             throw new Error(`HTTP ${response.status}: ${errorText}`);
           }
 
-          const responseData = await response.json();
+          const responseData = await response.json() as { conflict?: boolean; serverData?: unknown };
 
           // Handle conflicts
           if (responseData.conflict) {
-            await this.handleConflict(operation, responseData.serverData);
+            await this.handleConflict(operation, responseData.serverData as Record<string, unknown>);
             result.errors.push(`Conflict detected for ${operation.tableName}:${operation.recordId}`);
             continue;
           }
@@ -365,12 +365,19 @@ export class SyncManager {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      const data = await response.json();
+      interface ServerChange {
+        tableName: string;
+        recordId: string;
+        operation: string;
+        data: Record<string, unknown>;
+        version: number;
+      }
+      const data = await response.json() as { changes?: ServerChange[]; timestamp?: string };
       const { changes, timestamp } = data;
 
       if (!changes || changes.length === 0) {
         console.log("SyncManager: No server changes to pull");
-        await this.config.storage.setLastSyncedAt(this.config.userId, new Date(timestamp));
+        await this.config.storage.setLastSyncedAt(this.config.userId, timestamp ? new Date(timestamp) : new Date());
         return result;
       }
 
@@ -427,7 +434,7 @@ export class SyncManager {
       }
 
       // Update last synced timestamp
-      await this.config.storage.setLastSyncedAt(this.config.userId, new Date(timestamp));
+      await this.config.storage.setLastSyncedAt(this.config.userId, timestamp ? new Date(timestamp) : new Date());
 
       return result;
     } catch (error) {
