@@ -11,7 +11,7 @@ import { verifyToken, type AuthRequest } from "./auth";
 // CORS configuration
 export const corsMiddleware = cors({
   origin: config.nodeEnv === "production"
-    ? [config.domain, config.appUrl]
+    ? [config.domain, config.appUrl, config.webUrl].filter(Boolean)
     : true, // Allow all origins in development
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
