@@ -1,7 +1,7 @@
 import { Switch, Route } from "wouter";
-import { useEffect } from "react";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { queryClient, apiRequest } from "./lib/queryClient";
+import { QueryClientProvider, useMutation } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -10,6 +10,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AuthGuard } from "@/components/AuthGuard";
 import { initStorage } from "@/lib/storage/init";
+import { useAuth } from "@/lib/auth";
+import { Mail, X } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignupPage from "@/pages/auth/SignupPage";
@@ -38,6 +40,28 @@ import MessagesPage from "@/pages/MessagesPage";
 import ProfilePage from "@/pages/ProfilePage";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  const { user, setAuth, token } = useAuth();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Refresh user on mount so stale emailVerified state is corrected
+  useEffect(() => {
+    if (token) {
+      apiRequest("GET", "/api/auth/me")
+        .then((r) => r.json())
+        .then((data) => { if (data.user) setAuth(data.user, token); })
+        .catch(() => {});
+    }
+  }, [token]);
+
+  const resendMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/resend-verification", { email: user?.email });
+      return await res.json();
+    },
+  });
+
+  const showBanner = !bannerDismissed && user && (user as any).emailVerified === false;
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -52,6 +76,26 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
+          {showBanner && (
+            <div className="flex items-center justify-between gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-950 border-b border-yellow-200 dark:border-yellow-800 text-sm">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                <span className="text-yellow-800 dark:text-yellow-200">
+                  Verify your email address to unlock all features.
+                </span>
+                <button
+                  onClick={() => resendMutation.mutate()}
+                  disabled={resendMutation.isPending || resendMutation.isSuccess}
+                  className="underline hover:no-underline text-yellow-700 dark:text-yellow-300 disabled:opacity-50"
+                >
+                  {resendMutation.isPending ? "Sending…" : resendMutation.isSuccess ? "Sent!" : "Resend email"}
+                </button>
+              </div>
+              <button onClick={() => setBannerDismissed(true)} className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           <main className="flex-1 overflow-auto bg-background">
             {children}
           </main>

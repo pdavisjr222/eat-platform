@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { Sprout } from "lucide-react";
+import { Sprout, Mail } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { setAuth } = useAuth();
   const [, setLocation] = useLocation();
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -42,23 +44,49 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
-      const res = await apiRequest("POST", "/api/auth/login", data);
-      return await res.json();
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const res = await fetch(`${baseUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        const err: any = new Error(body.error || "Login failed");
+        err.needsVerification = body.needsVerification ?? false;
+        throw err;
+      }
+      return body;
     },
     onSuccess: (data: any) => {
       setAuth(data.user, data.token);
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
+      toast({ title: "Welcome back!", description: "You've successfully logged in." });
       setLocation("/");
     },
-    onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
-        variant: "destructive",
-      });
+    onError: (error: any, variables: LoginFormData) => {
+      if (error.needsVerification) {
+        setUnverifiedEmail(variables.email);
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message || "Invalid email or password",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/auth/resend-verification", { email });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent", description: "Check your inbox for the verification link." });
+    },
+    onError: () => {
+      toast({ title: "Failed to resend", description: "Please try again in a moment.", variant: "destructive" });
     },
   });
 
@@ -81,6 +109,27 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {unverifiedEmail && (
+            <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Email not verified</p>
+              </div>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
+                Please check <strong>{unverifiedEmail}</strong> for a verification link before logging in.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full text-xs"
+                onClick={() => resendMutation.mutate(unverifiedEmail)}
+                disabled={resendMutation.isPending}
+              >
+                {resendMutation.isPending ? "Sending..." : "Resend verification email"}
+              </Button>
+            </div>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
