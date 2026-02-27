@@ -45,7 +45,7 @@ export async function sendVerificationEmail(
   name: string,
   token: string
 ): Promise<boolean> {
-  const verificationUrl = `${config.appUrl}/auth/verify-email?token=${token}`;
+  const verificationUrl = `${config.webUrl}/auth/verify-email?token=${token}`;
 
   const html = `
     <!DOCTYPE html>
@@ -126,7 +126,7 @@ export async function sendPasswordResetEmail(
   name: string,
   token: string
 ): Promise<boolean> {
-  const resetUrl = `${config.appUrl}/auth/reset-password?token=${token}`;
+  const resetUrl = `${config.webUrl}/auth/reset-password?token=${token}`;
 
   const html = `
     <!DOCTYPE html>
@@ -262,7 +262,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<boo
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${config.appUrl}" style="display: inline-block; background-color: #22c55e; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="${config.webUrl}" style="display: inline-block; background-color: #22c55e; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Go to Dashboard
             </a>
           </div>

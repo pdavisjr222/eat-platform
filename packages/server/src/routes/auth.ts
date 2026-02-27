@@ -155,6 +155,14 @@ router.post("/api/auth/login", authRateLimiter, async (req, res) => {
       return res.status(403).json({ error: "Account is deactivated" });
     }
 
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        error: "Email not verified",
+        message: "Please verify your email before logging in. Check your inbox.",
+        needsVerification: true,
+      });
+    }
+
     const isValid = await comparePasswords(password, user.passwordHash);
     if (!isValid) {
       return res.status(401).json({ error: "Invalid credentials" });

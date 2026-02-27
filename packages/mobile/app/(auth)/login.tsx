@@ -45,10 +45,13 @@ export default function LoginScreen() {
       if (err instanceof ApiRequestError) {
         if (err.status === 401) {
           setError("Invalid email or password.");
+        } else if (err.status === 403 && err.message === "Email not verified") {
+          router.push({
+            pathname: "/(auth)/verify-email",
+            params: { prefillEmail: email.trim().toLowerCase() },
+          } as never);
         } else if (err.status === 403) {
           setError("Your account has been suspended. Contact support.");
-        } else if (err.status === 400 && err.message.includes("verify")) {
-          setError("Please verify your email before logging in.");
         } else {
           setError(err.message);
         }

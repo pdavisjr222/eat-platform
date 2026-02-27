@@ -90,4 +90,23 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ email }),
     }),
+
+  updateProfile: (
+    token: string,
+    data: {
+      name?: string;
+      bio?: string;
+      country?: string;
+      region?: string;
+      city?: string;
+      interests?: string[];
+      skills?: string[];
+      offerings?: string[];
+    }
+  ) =>
+    apiRequest<{ user: import("./auth").AuthUser }>("/api/profile", {
+      method: "PUT",
+      token,
+      body: JSON.stringify(data),
+    }),
 };
