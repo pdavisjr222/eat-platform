@@ -18,8 +18,9 @@ export default function VendorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
 
-  const { data: vendors, isLoading } = useQuery<Vendor[]>({
+  const { data: vendors, isLoading } = useQuery<{ data: Vendor[]; pagination: any }, Error, Vendor[]>({
     queryKey: ["/api/vendors"],
+    select: (res) => res.data,
   });
 
   const filteredVendors = vendors?.filter((vendor) => {

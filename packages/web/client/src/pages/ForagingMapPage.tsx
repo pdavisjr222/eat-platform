@@ -18,8 +18,9 @@ export default function ForagingMapPage() {
   const [selectedSeason, setSelectedSeason] = useState("all");
   const [selectedSpot, setSelectedSpot] = useState<ForagingSpot | null>(null);
 
-  const { data: foragingSpots, isLoading } = useQuery<ForagingSpot[]>({
+  const { data: foragingSpots, isLoading } = useQuery<{ data: ForagingSpot[]; pagination: any }, Error, ForagingSpot[]>({
     queryKey: ["/api/foraging-spots"],
+    select: (res) => res.data,
   });
 
   const filteredSpots = foragingSpots?.filter((spot) => {

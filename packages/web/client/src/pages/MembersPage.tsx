@@ -14,8 +14,9 @@ export default function MembersPage() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: members, isLoading } = useQuery<User[]>({
+  const { data: members, isLoading } = useQuery<{ data: User[]; pagination: any }, Error, User[]>({
     queryKey: ["/api/members"],
+    select: (res) => res.data,
   });
 
   const filteredMembers = members?.filter((member) => {

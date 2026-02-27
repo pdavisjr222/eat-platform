@@ -17,8 +17,9 @@ export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
 
-  const { data: events, isLoading } = useQuery<Event[]>({
+  const { data: events, isLoading } = useQuery<{ data: Event[]; pagination: any }, Error, Event[]>({
     queryKey: ["/api/events"],
+    select: (res) => res.data,
   });
 
   const filteredEvents = events?.filter((event) => {

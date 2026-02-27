@@ -19,8 +19,9 @@ export default function JobBoardPage() {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const { data: jobs, isLoading } = useQuery<JobPost[]>({
+  const { data: jobs, isLoading } = useQuery<{ data: JobPost[]; pagination: any }, Error, JobPost[]>({
     queryKey: ["/api/jobs"],
+    select: (res) => res.data,
   });
 
   const filteredJobs = jobs?.filter((job) => {

@@ -17,8 +17,9 @@ export default function LearningPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
 
-  const { data: modules, isLoading } = useQuery<TrainingModule[]>({
+  const { data: modules, isLoading } = useQuery<{ data: TrainingModule[]; pagination: any }, Error, TrainingModule[]>({
     queryKey: ["/api/training-modules"],
+    select: (res) => res.data,
   });
 
   const filteredModules = modules?.filter((module) => {
