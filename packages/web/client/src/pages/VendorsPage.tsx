@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, CheckCircle, Star, Tag } from "lucide-react";
+import { Search, CheckCircle, Star, Tag, Plus } from "lucide-react";
 import type { Vendor } from "@shared/schema";
 import { useLocation } from "wouter";
 
@@ -40,13 +40,19 @@ export default function VendorsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-4xl font-serif font-bold text-foreground mb-2">
-          Eco-Friendly Vendors
-        </h1>
-        <p className="text-muted-foreground">
-          Discover sustainable businesses and indigenous vendors
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">
+            Eco-Friendly Vendors
+          </h1>
+          <p className="text-muted-foreground">
+            Discover sustainable businesses and indigenous vendors
+          </p>
+        </div>
+        <Button onClick={() => setLocation("/vendors/create")} className="flex-shrink-0">
+          <Plus className="h-4 w-4 mr-2" />
+          Register Vendor
+        </Button>
       </div>
 
       <Card className="p-4">
