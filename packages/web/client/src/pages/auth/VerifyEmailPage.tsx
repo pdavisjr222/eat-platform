@@ -21,7 +21,12 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        const response = await fetch(`/api/auth/verify-email?token=${token}`);
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const response = await fetch(`${baseUrl}/api/auth/verify-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
         const data = await response.json();
 
         if (response.ok) {

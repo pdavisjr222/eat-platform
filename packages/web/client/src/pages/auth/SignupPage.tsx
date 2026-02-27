@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,9 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { Sprout } from "lucide-react";
+import { Sprout, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const signupSchema = z.object({
@@ -36,8 +36,9 @@ const countries = ["United States", "Canada", "Jamaica", "United Kingdom", "Trin
 
 export default function SignupPage() {
   const { toast } = useToast();
-  const { setAuth } = useAuth();
   const [, setLocation] = useLocation();
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState("");
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -56,13 +57,9 @@ export default function SignupPage() {
       const res = await apiRequest("POST", "/api/auth/signup", data);
       return await res.json();
     },
-    onSuccess: (data: any) => {
-      setAuth(data.user, data.token);
-      toast({
-        title: "Welcome to E.A.T.!",
-        description: "Your account has been created successfully.",
-      });
-      setLocation("/");
+    onSuccess: (_data: any, variables: SignupFormData) => {
+      setSentToEmail(variables.email);
+      setEmailSent(true);
     },
     onError: (error: any) => {
       toast({
@@ -73,9 +70,60 @@ export default function SignupPage() {
     },
   });
 
+  const resendMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/auth/resend-verification", { email });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent", description: "Check your inbox for the verification link." });
+    },
+    onError: () => {
+      toast({ title: "Failed to resend", description: "Please try again in a moment.", variant: "destructive" });
+    },
+  });
+
   const onSubmit = (data: SignupFormData) => {
     signupMutation.mutate(data);
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-green-100 dark:bg-green-950 p-4">
+                <Mail className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardDescription className="mt-2">
+              We sent a verification link to <strong>{sentToEmail}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Click the link in the email to verify your account. The link expires in 24 hours.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => resendMutation.mutate(sentToEmail)}
+              disabled={resendMutation.isPending}
+            >
+              {resendMutation.isPending ? "Sending..." : "Resend verification email"}
+            </Button>
+            <div className="text-center text-sm">
+              <Link href="/auth/login" className="text-primary hover:underline">
+                Return to login
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
