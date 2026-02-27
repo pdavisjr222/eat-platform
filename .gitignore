@@ -37,6 +37,8 @@ Thumbs.db
 
 # Mobile
 google-play-service-account.json
+packages/mobile/android/
+packages/mobile/ios/
 *.p8
 *.p12
 *.mobileprovision
