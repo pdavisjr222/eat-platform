@@ -29,12 +29,27 @@ import { z } from "zod";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
 
-const toBase64 = (file: File): Promise<string> =>
+// Compress + resize to JPEG ≤800px, ~100-200KB — keeps body well under Railway proxy limit
+const compressImage = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+        else { width = Math.round((width * MAX) / height); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.onerror = reject;
+    img.src = url;
   });
 
 const editListingFormSchema = z.object({
@@ -165,7 +180,7 @@ export default function EditListingPage() {
     if (!newFiles.length) return;
     setIsUploading(true);
     try {
-      const base64Images = await Promise.all(newFiles.map(toBase64));
+      const base64Images = await Promise.all(newFiles.map(compressImage));
       const allImages = [...(listing?.images ?? []), ...base64Images];
       await apiRequest("PUT", `/api/listings/${listingId}`, { images: allImages });
       queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
