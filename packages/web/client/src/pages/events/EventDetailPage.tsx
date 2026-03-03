@@ -92,6 +92,7 @@ export default function EventDetailPage() {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewComment, setReviewComment] = useState("");
+  const [activeImage, setActiveImage] = useState(0);
 
   const { data: event, isLoading, error } = useQuery<any>({
     queryKey: ["/api/events", id],
@@ -177,7 +178,6 @@ export default function EventDetailPage() {
   }
 
   const eventImages: string[] = event.images ?? (event.imageUrl ? [event.imageUrl] : []);
-  const [activeImage, setActiveImage] = useState(0);
 
   const isFull = event.capacity && event.registeredCount >= event.capacity;
   const isPast = new Date(event.endDateTime) < new Date();
