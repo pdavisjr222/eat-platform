@@ -84,7 +84,8 @@ export default function VendorDetailPage() {
     queryKey: ["/api/reviews/vendor", id],
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/reviews/vendor/${id}`);
-      return res.json();
+      const body = await res.json();
+      return Array.isArray(body) ? body : (body.data ?? []);
     },
     enabled: !!id,
   });
