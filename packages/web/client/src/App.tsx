@@ -41,6 +41,7 @@ import LearningPage from "@/pages/LearningPage";
 import JobBoardPage from "@/pages/JobBoardPage";
 import CreateJobPage from "@/pages/jobs/CreateJobPage";
 import EditJobPage from "@/pages/jobs/EditJobPage";
+import JobDetailPage from "@/pages/jobs/JobDetailPage";
 import MessagesPage from "@/pages/MessagesPage";
 import ProfilePage from "@/pages/ProfilePage";
 
@@ -288,7 +289,15 @@ function Router() {
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
-      
+
+      <Route path="/jobs/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <JobDetailPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
       <Route path="/messages">
         <AuthGuard>
           <AuthenticatedLayout>

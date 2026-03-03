@@ -110,8 +110,9 @@ export default function JobBoardPage() {
           {filteredJobs.map((job) => (
             <Card
               key={job.id}
-              className="hover-elevate"
+              className="hover-elevate cursor-pointer"
               data-testid={`card-job-${job.id}`}
+              onClick={() => setLocation(`/jobs/${job.id}`)}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-3">
