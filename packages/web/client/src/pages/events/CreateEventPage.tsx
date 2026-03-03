@@ -62,8 +62,8 @@ export default function CreateEventPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatLocalDatetime = (date: Date): string => {
@@ -95,7 +95,7 @@ export default function CreateEventPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: EventFormData & { imageUrl?: string }) => {
+    mutationFn: async (data: EventFormData & { images?: string[] }) => {
       try {
         const startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
         const endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
@@ -117,24 +117,34 @@ export default function CreateEventPage() {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      toast({ title: "File too large", description: "Max 2MB per image", variant: "destructive" });
-      return;
-    }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: `${f.name} is too large`, description: "Max 2MB per image", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setSelectedFiles((prev) => [...prev, ...valid]);
+    valid.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (i: number) => {
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const onSubmit = async (data: EventFormData) => {
-    let imageUrl: string | undefined;
-    if (imageFile) {
-      imageUrl = await compressImage(imageFile);
+    let images: string[] = [];
+    if (selectedFiles.length > 0) {
+      images = await Promise.all(selectedFiles.map(compressImage));
     }
-    createMutation.mutate({ ...data, imageUrl });
+    createMutation.mutate({ ...data, images });
   };
 
   return (
@@ -257,22 +267,25 @@ export default function CreateEventPage() {
                 </FormItem>
               )} />
 
-              {/* Cover image */}
+              {/* Photos */}
               <div className="space-y-3">
-                <p className="text-sm font-medium">Cover Photo (optional)</p>
-                {imagePreview ? (
-                  <div className="relative w-40 aspect-video rounded-lg overflow-hidden border bg-muted">
-                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
-                      <X className="h-3 w-3 text-white" />
-                    </button>
+                <p className="text-sm font-medium">Photos (optional)</p>
+                {previews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeFile(i)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
+                          <X className="h-3 w-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4 mr-2" /> Select Photo
-                  </Button>
                 )}
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" /> Select Photos
+                </Button>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
               </div>
 
               <div className="flex gap-4">

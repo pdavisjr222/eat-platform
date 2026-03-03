@@ -382,6 +382,7 @@ export const events = pgTable("events", {
   capacity: integer("capacity"),
   registeredCount: integer("registered_count").notNull().default(0),
   imageUrl: text("image_url"),
+  images: jsonb("images").$type<string[]>(),
   price: doublePrecision("price").default(0),
   currency: text("currency").default("USD"),
   isFeatured: boolean("is_featured").notNull().default(false),

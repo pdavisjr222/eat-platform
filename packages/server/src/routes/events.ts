@@ -117,6 +117,7 @@ router.post(
         price,
         currency,
         imageUrl,
+        images,
       } = req.body;
 
       if (!title || !description || !type || !startDateTime || !endDateTime || !timeZone) {
@@ -143,6 +144,7 @@ router.post(
           price: price ? parseFloat(price) : 0,
           currency: currency || "USD",
           imageUrl,
+          images: images || [],
         })
         .returning();
 

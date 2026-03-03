@@ -176,6 +176,9 @@ export default function EventDetailPage() {
     );
   }
 
+  const eventImages: string[] = event.images ?? (event.imageUrl ? [event.imageUrl] : []);
+  const [activeImage, setActiveImage] = useState(0);
+
   const isFull = event.capacity && event.registeredCount >= event.capacity;
   const isPast = new Date(event.endDateTime) < new Date();
   const isHost = (currentUser as any)?.id === event.hostUserId;
@@ -197,14 +200,32 @@ export default function EventDetailPage() {
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Events
       </Button>
 
-      {/* Hero image */}
-      {event.imageUrl ? (
-        <div className="w-full h-56 rounded-xl overflow-hidden bg-muted">
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
+      {/* Hero image / gallery */}
+      {eventImages.length > 0 ? (
+        <div className="space-y-2">
+          <div className="w-full h-56 rounded-xl overflow-hidden bg-muted">
+            <img
+              src={eventImages[activeImage]}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {eventImages.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {eventImages.map((src, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveImage(i)}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                    i === activeImage ? "border-primary" : "border-transparent"
+                  }`}
+                >
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="w-full h-32 rounded-xl bg-gradient-to-r from-primary/20 to-primary/5 flex items-center justify-center">

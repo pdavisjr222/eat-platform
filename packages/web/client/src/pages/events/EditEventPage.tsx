@@ -79,8 +79,8 @@ export default function EditEventPage() {
   const { toast } = useToast();
 
   const [isUploading, setIsUploading] = useState(false);
-  const [newFile, setNewFile] = useState<File | null>(null);
-  const [newPreview, setNewPreview] = useState<string | null>(null);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: event, isLoading } = useQuery<Event>({
@@ -143,40 +143,52 @@ export default function EditEventPage() {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      toast({ title: "File too large", description: "Max 2MB per image", variant: "destructive" });
-      return;
-    }
-    setNewFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setNewPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: `${f.name} is too large`, description: "Max 2MB per image", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setNewFiles((prev) => [...prev, ...valid]);
+    valid.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setNewPreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
   };
 
-  const uploadImage = async () => {
-    if (!newFile) return;
+  const removeNewFile = (i: number) => {
+    setNewFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setNewPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const removeExistingImage = async (url: string) => {
+    const updated = ((event as any)?.images ?? []).filter((u: string) => u !== url);
+    await apiRequest("PUT", `/api/events/${eventId}`, { images: updated });
+    queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
+    queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+  };
+
+  const uploadNewImages = async () => {
+    if (!newFiles.length) return;
     setIsUploading(true);
     try {
-      const imageUrl = await compressImage(newFile);
-      await apiRequest("PUT", `/api/events/${eventId}`, { imageUrl });
+      const base64Images = await Promise.all(newFiles.map(compressImage));
+      const allImages = [...((event as any)?.images ?? []), ...base64Images];
+      await apiRequest("PUT", `/api/events/${eventId}`, { images: allImages });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      setNewFile(null);
-      setNewPreview(null);
-      toast({ title: "Cover photo updated!" });
+      setNewFiles([]);
+      setNewPreviews([]);
+      toast({ title: "Photos uploaded!" });
     } catch (error: any) {
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const removeImage = async () => {
-    await apiRequest("PUT", `/api/events/${eventId}`, { imageUrl: null });
-    queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
-    queryClient.invalidateQueries({ queryKey: ["/api/events"] });
   };
 
   if (isLoading) {
@@ -200,6 +212,8 @@ export default function EditEventPage() {
       </div>
     );
   }
+
+  const existingImages: string[] = (event as any).images ?? [];
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
@@ -226,39 +240,47 @@ export default function EditEventPage() {
         </AlertDialog>
       </div>
 
-      {/* Cover photo */}
+      {/* Photos */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Cover Photo</CardTitle>
-          <CardDescription>Manage your event cover image</CardDescription>
+          <CardTitle className="text-base">Photos</CardTitle>
+          <CardDescription>Manage your event images</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {event.imageUrl && !newPreview && (
-            <div className="relative w-48 aspect-video rounded-lg overflow-hidden border bg-muted">
-              <img src={resolveImageUrl(event.imageUrl)} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={removeImage} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
-                <X className="h-3 w-3 text-white" />
-              </button>
+          {existingImages.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {existingImages.map((url, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                  <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
-          {newPreview && (
-            <div className="relative w-48 aspect-video rounded-lg overflow-hidden border border-dashed border-primary bg-muted">
-              <img src={newPreview} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={() => { setNewFile(null); setNewPreview(null); }} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
-                <X className="h-3 w-3 text-white" />
-              </button>
+          {newPreviews.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {newPreviews.map((src, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-dashed border-primary bg-muted">
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeNewFile(i)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" /> {event.imageUrl ? "Replace Photo" : "Select Photo"}
+              <Upload className="h-4 w-4 mr-2" /> Select Photos
             </Button>
-            {newFile && (
-              <Button type="button" size="sm" onClick={uploadImage} disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Upload Photo"}
+            {newFiles.length > 0 && (
+              <Button type="button" size="sm" onClick={uploadNewImages} disabled={isUploading}>
+                {isUploading ? "Uploading..." : `Upload ${newFiles.length} Photo${newFiles.length !== 1 ? "s" : ""}`}
               </Button>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
           </div>
         </CardContent>
       </Card>
