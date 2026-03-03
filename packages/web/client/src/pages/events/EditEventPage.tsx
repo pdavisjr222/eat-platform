@@ -107,15 +107,16 @@ export default function EditEventPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditEventFormData) => {
+      let startDate: string, endDate: string;
       try {
-        const startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
-        const endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
-        const payload = { ...data, startDateTime: new Date(startDate), endDateTime: new Date(endDate) };
-        const res = await apiRequest("PUT", `/api/events/${eventId}`, payload);
-        return await res.json();
-      } catch (error) {
+        startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
+        endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
+      } catch {
         throw new Error("Invalid date/time or timezone values");
       }
+      const payload = { ...data, startDateTime: new Date(startDate), endDateTime: new Date(endDate) };
+      const res = await apiRequest("PUT", `/api/events/${eventId}`, payload);
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });

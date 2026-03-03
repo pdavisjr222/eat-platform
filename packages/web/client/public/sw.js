@@ -1,8 +1,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
-import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { registerRoute } from 'workbox-routing';
+import { CacheFirst, NetworkFirst, NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
-import { BackgroundSyncPlugin } from 'workbox-background-sync';
 
 // Injected by vite-plugin-pwa at build time
 precacheAndRoute(self.__WB_MANIFEST);
@@ -11,7 +10,7 @@ cleanupOutdatedCaches();
 self.skipWaiting();
 self.clients.claim();
 
-// API calls — NetworkFirst
+// API GET calls — NetworkFirst (short TTL for freshness)
 registerRoute(
   ({ url }) => url.pathname.startsWith('/api/'),
   new NetworkFirst({
@@ -21,6 +20,18 @@ registerRoute(
     ],
   })
 );
+
+// API mutations — NetworkOnly for POST, PUT, DELETE, PATCH
+// Never cache mutations; BackgroundSync is not used because:
+// - Auth tokens expire (queued requests would replay with stale tokens)
+// - Large image payloads (base64) cannot be reliably serialised into IndexedDB
+['POST', 'PUT', 'DELETE', 'PATCH'].forEach((method) => {
+  registerRoute(
+    ({ url }) => url.pathname.startsWith('/api/'),
+    new NetworkOnly(),
+    method
+  );
+});
 
 // Images — CacheFirst
 registerRoute(
@@ -45,22 +56,6 @@ registerRoute(
       new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 7 * 24 * 60 * 60 }),
     ],
   })
-);
-
-// Background sync for offline mutations
-const bgSyncPlugin = new BackgroundSyncPlugin('eat-sync-queue', {
-  maxRetentionTime: 24 * 60,
-});
-
-registerRoute(
-  ({ url, request }) =>
-    url.pathname.startsWith('/api/') &&
-    ['POST', 'PUT', 'DELETE'].includes(request.method),
-  new NetworkFirst({
-    cacheName: 'eat-platform-v1-mutations',
-    plugins: [bgSyncPlugin],
-  }),
-  'POST'
 );
 
 // Push notifications
