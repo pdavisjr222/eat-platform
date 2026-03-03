@@ -30,8 +30,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(securityMiddleware);
   app.use(apiRateLimiter);
 
-  // Serve uploaded files
-  app.use("/uploads", express.static(path.join(process.cwd(), config.uploadDir)));
+  // Serve uploaded files — cross-origin so the Vercel frontend can load images from Railway
+  app.use(
+    "/uploads",
+    (_req, res, next) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      next();
+    },
+    express.static(path.join(process.cwd(), config.uploadDir))
+  );
 
   // Register all route modules
   app.use(miscRouter);
