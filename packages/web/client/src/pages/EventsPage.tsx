@@ -111,9 +111,9 @@ export default function EventsPage() {
                 data-testid={`card-event-${event.id}`}
               >
                 <div className="aspect-video bg-muted relative">
-                  {event.imageUrl ? (
+                  {((event as any).images?.[0] ?? event.imageUrl) ? (
                     <img
-                      src={event.imageUrl}
+                      src={(event as any).images?.[0] ?? event.imageUrl}
                       alt={event.title}
                       className="w-full h-full object-cover"
                     />
