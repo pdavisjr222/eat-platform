@@ -95,16 +95,26 @@ export default function CreateEventPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: EventFormData & { images?: string[] }) => {
+    mutationFn: async ({ data, files }: { data: EventFormData; files: File[] }) => {
+      // Step 1: create event without images (keeps initial payload small)
+      let startDate: string, endDate: string;
       try {
-        const startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
-        const endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
-        const payload = { ...data, startDateTime: new Date(startDate), endDateTime: new Date(endDate) };
-        const res = await apiRequest("POST", "/api/events", payload);
-        return await res.json();
-      } catch (error) {
+        startDate = eventDateTimeToUTC(data.startDateTime, data.timeZone);
+        endDate = eventDateTimeToUTC(data.endDateTime, data.timeZone);
+      } catch {
         throw new Error("Invalid date/time or timezone values");
       }
+      const payload = { ...data, startDateTime: new Date(startDate), endDateTime: new Date(endDate) };
+      const res = await apiRequest("POST", "/api/events", payload);
+      const event = await res.json();
+
+      // Step 2: upload images separately so create never fails due to payload size
+      if (files.length > 0) {
+        const images = await Promise.all(files.map(compressImage));
+        await apiRequest("PUT", `/api/events/${event.id}`, { images });
+      }
+
+      return event;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
@@ -139,12 +149,8 @@ export default function CreateEventPage() {
     setPreviews((prev) => prev.filter((_, idx) => idx !== i));
   };
 
-  const onSubmit = async (data: EventFormData) => {
-    let images: string[] = [];
-    if (selectedFiles.length > 0) {
-      images = await Promise.all(selectedFiles.map(compressImage));
-    }
-    createMutation.mutate({ ...data, images });
+  const onSubmit = (data: EventFormData) => {
+    createMutation.mutate({ data, files: selectedFiles });
   };
 
   return (

@@ -4,6 +4,10 @@ import { useAuth } from "./auth";
 // API base URL - defaults to localhost:5000 in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+// Pre-flight guard: reject payloads above 10MB before sending (proxy/server limit is 15MB,
+// but base64 encoding inflates size ~33% so 10MB gives comfortable headroom)
+const MAX_PAYLOAD_BYTES = 10 * 1024 * 1024;
+
 function getAuthHeaders(): HeadersInit {
   const token = useAuth.getState().token;
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -11,6 +15,9 @@ function getAuthHeaders(): HeadersInit {
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error("Images too large. Try fewer or smaller photos.");
+    }
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -26,18 +33,30 @@ export async function apiRequest(
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
 
-  // Prepend API base URL if not already a full URL
+  const body = data ? JSON.stringify(data) : undefined;
+
+  if (body && body.length > MAX_PAYLOAD_BYTES) {
+    throw new Error("Images too large. Try fewer or smaller photos.");
+  }
+
   const fullUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
 
-  const res = await fetch(fullUrl, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(fullUrl, {
+      method,
+      headers,
+      body,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.toLowerCase().includes("fetch")) {
+      throw new Error("Network error. Check your connection and try again.");
+    }
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

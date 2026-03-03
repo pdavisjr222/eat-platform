@@ -82,9 +82,19 @@ export default function CreateForagingSpotPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: ForagingSpotFormData) => {
-      const res = await apiRequest("POST", "/api/foraging-spots", data);
-      return await res.json();
+    mutationFn: async ({ data, files }: { data: ForagingSpotFormData; files: File[] }) => {
+      // Step 1: create spot without images
+      const { images: _omit, ...spotData } = data;
+      const res = await apiRequest("POST", "/api/foraging-spots", spotData);
+      const spot = await res.json();
+
+      // Step 2: upload images separately
+      if (files.length > 0) {
+        const images = await Promise.all(files.map(compressImage));
+        await apiRequest("PUT", `/api/foraging-spots/${spot.id}`, { images });
+      }
+
+      return spot;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foraging-spots"] });
@@ -119,12 +129,8 @@ export default function CreateForagingSpotPage() {
     setPreviews((prev) => prev.filter((_, idx) => idx !== i));
   };
 
-  const onSubmit = async (data: ForagingSpotFormData) => {
-    let images: string[] = [];
-    if (selectedFiles.length > 0) {
-      images = await Promise.all(selectedFiles.map(compressImage));
-    }
-    createMutation.mutate({ ...data, images });
+  const onSubmit = (data: ForagingSpotFormData) => {
+    createMutation.mutate({ data, files: selectedFiles });
   };
 
   return (
