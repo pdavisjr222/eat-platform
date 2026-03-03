@@ -119,6 +119,63 @@ router.post(
   }
 );
 
+router.put(
+  "/api/vendors/:id",
+  authenticateToken,
+  checkUserStatus,
+  requireEmailVerified,
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const [vendor] = await db
+        .select()
+        .from(vendors)
+        .where(eq(vendors.id, id))
+        .limit(1);
+
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+
+      if (vendor.linkedUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this vendor" });
+      }
+
+      const { name, description, type, website, email, phone, address, city, country, latitude, longitude, logoUrl } = req.body;
+
+      if (!name || !description || !type) {
+        return res.status(400).json({ error: "Name, description, and type are required" });
+      }
+
+      const [updated] = await db
+        .update(vendors)
+        .set({
+          name,
+          description,
+          type,
+          website: website || null,
+          email: email || null,
+          phone: phone || null,
+          address: address || null,
+          city: city || null,
+          country: country || null,
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
+          logoUrl: logoUrl || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(vendors.id, id))
+        .returning();
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating vendor:", error);
+      res.status(500).json({ error: "Failed to update vendor" });
+    }
+  }
+);
+
 // Verify vendor (moderator/admin only)
 router.post(
   "/api/vendors/:id/verify",

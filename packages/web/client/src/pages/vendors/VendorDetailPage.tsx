@@ -21,6 +21,7 @@ import {
   Tag,
   Calendar,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 
 const vendorTypeLabels: Record<string, string> = {
@@ -154,14 +155,22 @@ export default function VendorDetailPage() {
       ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1)
       : null;
 
-  const canReview = user && !reviews.some((r: any) => r.reviewerUserId === (user as any).id);
+  const isOwner = (user as any)?.id === vendor.linkedUserId;
+  const canReview = user && !isOwner && !reviews.some((r: any) => r.reviewerUserId === (user as any).id);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* Back */}
-      <Button variant="ghost" onClick={() => setLocation("/vendors")} className="pl-0">
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Vendors
-      </Button>
+      {/* Back + Edit */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => setLocation("/vendors")} className="pl-0">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Vendors
+        </Button>
+        {isOwner && (
+          <Button variant="outline" size="sm" onClick={() => setLocation(`/vendors/edit/${id}`)}>
+            <Pencil className="h-4 w-4 mr-2" /> Edit Profile
+          </Button>
+        )}
+      </div>
 
       {/* Hero card */}
       <Card>
