@@ -104,9 +104,10 @@ export default function MessagesPage() {
   });
 
   // Members for new conversation dialog
-  const { data: members = [], isLoading: membersLoading } = useQuery<Member[]>({
+  const { data: members = [], isLoading: membersLoading } = useQuery<{ data: Member[]; pagination: any }, Error, Member[]>({
     queryKey: ["/api/members"],
     enabled: newMsgOpen,
+    select: (res) => res.data,
   });
 
   const sendMutation = useMutation({

@@ -1,17 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Leaf } from "lucide-react";
+import { Plus, Leaf } from "lucide-react";
 import type { ForagingSpot } from "@shared/schema";
 import { useLocation } from "wouter";
 import { resolveImageUrl } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Fix Leaflet default marker icons in Vite builds
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
 const plantTypes = ["all", "fruit", "vegetable", "herb", "nut", "berry", "mushroom", "edible-green"];
 const seasons = ["all", "spring", "summer", "fall", "winter", "year-round"];
+
+function FitBounds({ spots }: { spots: ForagingSpot[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const coords = spots
+      .filter((s) => s.latitude != null && s.longitude != null)
+      .map((s) => [s.latitude!, s.longitude!] as [number, number]);
+    if (coords.length === 1) {
+      map.setView(coords[0], 10);
+    } else if (coords.length > 1) {
+      map.fitBounds(L.latLngBounds(coords), { padding: [40, 40] });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spots.length]);
+  return null;
+}
 
 export default function ForagingMapPage() {
   const [, setLocation] = useLocation();
@@ -28,6 +55,8 @@ export default function ForagingMapPage() {
     const matchesSeason = selectedSeason === "all" || spot.seasonality?.toLowerCase().includes(selectedSeason);
     return matchesType && matchesSeason;
   });
+
+  const spotsWithCoords = filteredSpots?.filter((s) => s.latitude != null && s.longitude != null) ?? [];
 
   return (
     <div className="p-6 space-y-6">
@@ -51,12 +80,41 @@ export default function ForagingMapPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card className="p-4">
-            <div className="bg-muted rounded-md aspect-video flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MapPin className="h-12 w-12 mx-auto mb-2" />
-                <p className="text-sm">Interactive map will display here</p>
-                <p className="text-xs mt-1">Showing {filteredSpots?.length || 0} foraging spots</p>
+          <Card className="overflow-hidden">
+            <div className="h-[420px] w-full relative">
+              <MapContainer
+                center={[20, 0]}
+                zoom={2}
+                style={{ height: "100%", width: "100%" }}
+                scrollWheelZoom
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {spotsWithCoords.map((spot) => (
+                  <Marker key={spot.id} position={[spot.latitude!, spot.longitude!]}>
+                    <Popup>
+                      <div className="min-w-[160px]">
+                        <p className="font-semibold text-sm mb-1">{spot.title}</p>
+                        <p className="text-xs text-gray-500 mb-1 capitalize">{spot.plantType}</p>
+                        {spot.seasonality && (
+                          <p className="text-xs text-gray-400 mb-2">{spot.seasonality}</p>
+                        )}
+                        <button
+                          onClick={() => setLocation(`/foraging-map/${spot.id}`)}
+                          className="text-xs text-blue-600 hover:underline font-medium"
+                        >
+                          View details →
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+                {(filteredSpots?.length ?? 0) > 0 && <FitBounds spots={filteredSpots ?? []} />}
+              </MapContainer>
+              <div className="absolute bottom-2 left-2 z-[1000] bg-background/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground border pointer-events-none">
+                {spotsWithCoords.length} spot{spotsWithCoords.length !== 1 ? "s" : ""} on map
               </div>
             </div>
           </Card>
