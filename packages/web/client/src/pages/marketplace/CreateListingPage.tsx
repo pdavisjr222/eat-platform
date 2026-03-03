@@ -12,8 +12,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { getToken } from "@/lib/auth";
 import { z } from "zod";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
+
+const toBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const createListingFormSchema = z.object({
   type: z.string().min(1),
@@ -30,8 +39,6 @@ const createListingFormSchema = z.object({
 });
 
 type CreateListingFormData = z.infer<typeof createListingFormSchema>;
-
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function CreateListingPage() {
   const [, setLocation] = useLocation();
@@ -82,12 +89,17 @@ export default function CreateListingPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setSelectedFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: `${f.name} is too large`, description: "Max 2MB per image", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setSelectedFiles((prev) => [...prev, ...valid]);
+    valid.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPreviews((prev) => [...prev, ev.target?.result as string]);
-      };
+      reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
       reader.readAsDataURL(file);
     });
   };
@@ -98,23 +110,15 @@ export default function CreateListingPage() {
   };
 
   const handleUpload = async () => {
-    if (!createdId || selectedFiles.length === 0) {
+    if (!createdId) return;
+    if (selectedFiles.length === 0) {
       setLocation(`/marketplace/${createdId}`);
       return;
     }
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      selectedFiles.forEach((file) => formData.append("images", file));
-      const res = await fetch(`${BASE_URL}/api/listings/${createdId}/images`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
-      }
+      const images = await Promise.all(selectedFiles.map(toBase64));
+      await apiRequest("PUT", `/api/listings/${createdId}`, { images });
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       toast({ title: "Images uploaded!" });
     } catch (error: any) {
@@ -150,7 +154,7 @@ export default function CreateListingPage() {
             >
               <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Click to select images</p>
-              <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 10MB each</p>
+              <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 2MB each</p>
               <input
                 ref={fileInputRef}
                 type="file"

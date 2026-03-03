@@ -218,7 +218,6 @@ router.post(
 router.put("/api/listings/:id", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { type, category, title, description, price, currency, locationText, latitude, longitude, availabilityStatus, images } = req.body;
 
     const [existing] = await db
       .select()
@@ -234,22 +233,24 @@ router.put("/api/listings/:id", authenticateToken, checkUserStatus, async (req: 
       return res.status(403).json({ error: "Not authorized to edit this listing" });
     }
 
+    // Partial update — only touch fields that are explicitly provided in the request body
+    const b = req.body;
+    const patch: Record<string, any> = { updatedAt: new Date() };
+    if (b.type               !== undefined) patch.type               = b.type;
+    if (b.category           !== undefined) patch.category           = b.category;
+    if (b.title              !== undefined) patch.title              = b.title;
+    if (b.description        !== undefined) patch.description        = b.description;
+    if (b.price              !== undefined) patch.price              = b.price ? parseFloat(b.price) : null;
+    if (b.currency           !== undefined) patch.currency           = b.currency;
+    if (b.locationText       !== undefined) patch.locationText       = b.locationText;
+    if (b.latitude           !== undefined) patch.latitude           = b.latitude ? parseFloat(b.latitude) : null;
+    if (b.longitude          !== undefined) patch.longitude          = b.longitude ? parseFloat(b.longitude) : null;
+    if (b.availabilityStatus !== undefined) patch.availabilityStatus = b.availabilityStatus;
+    if (b.images             !== undefined) patch.images             = b.images;
+
     const [updatedListing] = await db
       .update(listings)
-      .set({
-        type,
-        category,
-        title,
-        description,
-        price: price ? parseFloat(price) : null,
-        currency,
-        locationText,
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
-        availabilityStatus,
-        images,
-        updatedAt: new Date(),
-      })
+      .set(patch)
       .where(eq(listings.id, id))
       .returning();
 

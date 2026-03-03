@@ -23,12 +23,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { getToken } from "@/lib/auth";
 import { resolveImageUrl } from "@/lib/utils";
 import { type Listing } from "@shared/schema";
 import { z } from "zod";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
+
+const toBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const editListingFormSchema = z.object({
   type: z.string().min(1),
@@ -127,8 +134,15 @@ export default function EditListingPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setNewFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: `${f.name} is too large`, description: "Max 2MB per image", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setNewFiles((prev) => [...prev, ...valid]);
+    valid.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (ev) => setNewPreviews((prev) => [...prev, ev.target?.result as string]);
       reader.readAsDataURL(file);
@@ -151,17 +165,9 @@ export default function EditListingPage() {
     if (!newFiles.length) return;
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      newFiles.forEach((f) => formData.append("images", f));
-      const res = await fetch(`${BASE_URL}/api/listings/${listingId}/images`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
-      }
+      const base64Images = await Promise.all(newFiles.map(toBase64));
+      const allImages = [...(listing?.images ?? []), ...base64Images];
+      await apiRequest("PUT", `/api/listings/${listingId}`, { images: allImages });
       queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       setNewFiles([]);
