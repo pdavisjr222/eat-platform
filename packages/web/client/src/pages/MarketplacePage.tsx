@@ -110,8 +110,9 @@ export default function MarketplacePage() {
           {filteredListings.map((listing) => (
             <Card
               key={listing.id}
-              className="hover-elevate overflow-hidden"
+              className="hover-elevate overflow-hidden cursor-pointer"
               data-testid={`card-listing-${listing.id}`}
+              onClick={() => setLocation(`/marketplace/${listing.id}`)}
             >
               <div className="aspect-video bg-muted relative">
                 {listing.images && listing.images.length > 0 ? (

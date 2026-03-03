@@ -24,6 +24,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import MarketplacePage from "@/pages/MarketplacePage";
 import CreateListingPage from "@/pages/marketplace/CreateListingPage";
 import EditListingPage from "@/pages/marketplace/EditListingPage";
+import ListingDetailPage from "@/pages/marketplace/ListingDetailPage";
 import ForagingMapPage from "@/pages/ForagingMapPage";
 import VendorsPage from "@/pages/VendorsPage";
 import MembersPage from "@/pages/MembersPage";
@@ -151,7 +152,15 @@ function Router() {
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
-      
+
+      <Route path="/marketplace/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <ListingDetailPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
       <Route path="/foraging-map">
         <AuthGuard>
           <AuthenticatedLayout>
