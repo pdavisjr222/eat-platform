@@ -1,8 +1,9 @@
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -22,8 +23,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getToken } from "@/lib/auth";
 import { type Listing } from "@shared/schema";
 import { z } from "zod";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const editListingFormSchema = z.object({
   type: z.string().min(1),
@@ -46,6 +50,12 @@ export default function EditListingPage() {
   const params = useParams<{ id: string }>();
   const listingId = params.id;
   const { toast } = useToast();
+
+  // Image management state
+  const [isUploading, setIsUploading] = useState(false);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: listing, isLoading } = useQuery<Listing>({
     queryKey: [`/api/listings/${listingId}`],
@@ -113,6 +123,56 @@ export default function EditListingPage() {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setNewFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setNewPreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeNewFile = (i: number) => {
+    setNewFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setNewPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const removeExistingImage = async (url: string) => {
+    const updated = (listing?.images ?? []).filter((u) => u !== url);
+    await apiRequest("PUT", `/api/listings/${listingId}`, { images: updated });
+    queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
+    queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
+  };
+
+  const uploadNewImages = async () => {
+    if (!newFiles.length) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      newFiles.forEach((f) => formData.append("images", f));
+      const res = await fetch(`${BASE_URL}/api/listings/${listingId}/images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
+      setNewFiles([]);
+      setNewPreviews([]);
+      toast({ title: "Images uploaded!" });
+    } catch (error: any) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const onSubmit = (data: EditListingFormData) => {
     updateMutation.mutate(data);
   };
@@ -173,6 +233,81 @@ export default function EditListingPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      {/* Image management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Photos</CardTitle>
+          <CardDescription>Manage your listing images</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Existing images */}
+          {(listing?.images ?? []).length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {(listing?.images ?? []).map((url, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(url)}
+                    className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New file previews */}
+          {newPreviews.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {newPreviews.map((src, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-dashed border-primary bg-muted">
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewFile(i)}
+                    className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upload controls */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-2" /> Select Images
+            </Button>
+            {newFiles.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={uploadNewImages}
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : `Upload ${newFiles.length} Image${newFiles.length !== 1 ? "s" : ""}`}
+              </Button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

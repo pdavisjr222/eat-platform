@@ -33,6 +33,7 @@ import CreateEventPage from "@/pages/events/CreateEventPage";
 import EditEventPage from "@/pages/events/EditEventPage";
 import CreateForagingSpotPage from "@/pages/foraging/CreateForagingSpotPage";
 import EditForagingSpotPage from "@/pages/foraging/EditForagingSpotPage";
+import ForagingSpotDetailPage from "@/pages/foraging/ForagingSpotDetailPage";
 import MemberDetailPage from "@/pages/members/MemberDetailPage";
 import EventDetailPage from "@/pages/events/EventDetailPage";
 import CreateVendorPage from "@/pages/vendors/CreateVendorPage";
@@ -185,7 +186,15 @@ function Router() {
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
-      
+
+      <Route path="/foraging-map/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <ForagingSpotDetailPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
       <Route path="/vendors">
         <AuthGuard>
           <AuthenticatedLayout>

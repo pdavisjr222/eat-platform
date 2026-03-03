@@ -16,7 +16,6 @@ export default function ForagingMapPage() {
   const [, setLocation] = useLocation();
   const [selectedPlantType, setSelectedPlantType] = useState("all");
   const [selectedSeason, setSelectedSeason] = useState("all");
-  const [selectedSpot, setSelectedSpot] = useState<ForagingSpot | null>(null);
 
   const { data: foragingSpots, isLoading } = useQuery<{ data: ForagingSpot[]; pagination: any }, Error, ForagingSpot[]>({
     queryKey: ["/api/foraging-spots"],
@@ -122,7 +121,7 @@ export default function ForagingMapPage() {
               <Card
                 key={spot.id}
                 className="hover-elevate cursor-pointer overflow-hidden"
-                onClick={() => setSelectedSpot(spot)}
+                onClick={() => setLocation(`/foraging-map/${spot.id}`)}
                 data-testid={`card-spot-${spot.id}`}
               >
                 <div className="aspect-video bg-muted relative">

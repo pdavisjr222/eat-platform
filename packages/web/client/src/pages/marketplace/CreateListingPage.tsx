@@ -1,8 +1,9 @@
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, X, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getToken } from "@/lib/auth";
 import { z } from "zod";
 
 const createListingFormSchema = z.object({
@@ -29,9 +31,18 @@ const createListingFormSchema = z.object({
 
 type CreateListingFormData = z.infer<typeof createListingFormSchema>;
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function CreateListingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Image upload state
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingFormSchema),
@@ -55,13 +66,9 @@ export default function CreateListingPage() {
       const res = await apiRequest("POST", "/api/listings", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
-      toast({
-        title: "Success!",
-        description: "Your listing has been created.",
-      });
-      setLocation("/marketplace");
+      setCreatedId(data.id);
     },
     onError: (error: any) => {
       toast({
@@ -72,10 +79,133 @@ export default function CreateListingPage() {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setSelectedFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPreviews((prev) => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpload = async () => {
+    if (!createdId || selectedFiles.length === 0) {
+      setLocation(`/marketplace/${createdId}`);
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach((file) => formData.append("images", file));
+      const res = await fetch(`${BASE_URL}/api/listings/${createdId}/images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
+      toast({ title: "Images uploaded!" });
+    } catch (error: any) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      setLocation(`/marketplace/${createdId}`);
+    }
+  };
+
   const onSubmit = (data: CreateListingFormData) => {
     createMutation.mutate(data);
   };
 
+  // ── Step 2: image upload after listing created ──
+  if (createdId) {
+    return (
+      <div className="container max-w-3xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImagePlus className="h-5 w-5" /> Add Photos
+            </CardTitle>
+            <CardDescription>
+              Upload photos for your listing (optional — up to 10 images, max 10MB each)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Drop zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Click to select images</p>
+              <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 10MB each</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
+            {/* Previews */}
+            {previews.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {previews.map((src, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
+                    >
+                      <X className="h-3 w-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="flex-1"
+              >
+                {isUploading
+                  ? "Uploading..."
+                  : selectedFiles.length > 0
+                  ? `Upload ${selectedFiles.length} Image${selectedFiles.length !== 1 ? "s" : ""}`
+                  : "Continue Without Photos"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setLocation(`/marketplace/${createdId}`)}
+                disabled={isUploading}
+              >
+                Skip
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Step 1: create listing form ──
   return (
     <div className="container max-w-3xl py-8">
       <div className="mb-6">
@@ -238,7 +368,7 @@ export default function CreateListingPage() {
                   disabled={createMutation.isPending}
                   data-testid="button-submit"
                 >
-                  {createMutation.isPending ? "Creating..." : "Create Listing"}
+                  {createMutation.isPending ? "Creating..." : "Next: Add Photos"}
                 </Button>
               </div>
             </form>
