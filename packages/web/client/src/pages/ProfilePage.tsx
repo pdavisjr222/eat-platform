@@ -72,10 +72,19 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Member since {new Date(user.createdAt).toLocaleDateString()}
                 </p>
-                <Button className="w-full mb-2" data-testid="button-edit-profile">
+                <Button
+                  className="w-full mb-2"
+                  onClick={() => setLocation("/profile/edit")}
+                  data-testid="button-edit-profile"
+                >
                   Edit Profile
                 </Button>
-                <Button variant="outline" className="w-full" data-testid="button-view-public-profile">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setLocation(`/members/${(user as any).id}`)}
+                  data-testid="button-view-public-profile"
+                >
                   View Public Profile
                 </Button>
               </div>

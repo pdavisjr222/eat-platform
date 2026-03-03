@@ -46,6 +46,7 @@ import EditJobPage from "@/pages/jobs/EditJobPage";
 import JobDetailPage from "@/pages/jobs/JobDetailPage";
 import MessagesPage from "@/pages/MessagesPage";
 import ProfilePage from "@/pages/ProfilePage";
+import EditProfilePage from "@/pages/EditProfilePage";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { user, setAuth, token } = useAuth();
@@ -324,6 +325,14 @@ function Router() {
         </AuthGuard>
       </Route>
       
+      <Route path="/profile/edit">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <EditProfilePage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
       <Route path="/profile">
         <AuthGuard>
           <AuthenticatedLayout>
