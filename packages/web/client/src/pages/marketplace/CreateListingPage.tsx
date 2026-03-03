@@ -12,17 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getToken } from "@/lib/auth";
 import { z } from "zod";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
-const toBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
 
 const createListingFormSchema = z.object({
   type: z.string().min(1),
@@ -117,8 +112,18 @@ export default function CreateListingPage() {
     }
     setIsUploading(true);
     try {
-      const images = await Promise.all(selectedFiles.map(toBase64));
-      await apiRequest("PUT", `/api/listings/${createdId}`, { images });
+      const formData = new FormData();
+      selectedFiles.forEach((file) => formData.append("images", file));
+      const token = getToken();
+      const res = await fetch(`${BASE_URL}/api/listings/${createdId}/images`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(err.error || "Upload failed");
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       toast({ title: "Images uploaded!" });
     } catch (error: any) {

@@ -13,6 +13,7 @@ import {
 } from "../middleware";
 import {
   uploadListingImages,
+  uploadListingImagesMemory,
   getFileUrl,
   deleteFile,
 } from "../upload";
@@ -166,7 +167,7 @@ router.post(
   checkUserStatus,
   uploadRateLimiter,
   (req, res, next) => {
-    uploadListingImages(req, res, (err) => {
+    uploadListingImagesMemory(req, res, (err) => {
       if (err) {
         return res.status(400).json({ error: err.message });
       }
@@ -196,7 +197,10 @@ router.post(
         return res.status(403).json({ error: "Not authorized" });
       }
 
-      const newImages = files.map((file) => getFileUrl(file.filename, "listings"));
+      // Convert buffers to base64 data URLs for persistent storage in Neon JSONB
+      const newImages = files.map(
+        (file) => `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+      );
       const existingImages = listing.images || [];
 
       await db
@@ -207,7 +211,7 @@ router.post(
         })
         .where(eq(listings.id, id));
 
-      res.json({ images: newImages });
+      res.json({ images: newImages.map((_, i) => `image_${i}`) });
     } catch (error: any) {
       console.error("Error uploading listing images:", error);
       res.status(500).json({ error: "Failed to upload images" });

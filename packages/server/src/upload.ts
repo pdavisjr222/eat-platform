@@ -77,10 +77,17 @@ export const uploadProfileImage = multer({
   fileFilter: imageFilter,
 }).single("image");
 
-// Listing images upload (multiple)
+// Listing images upload (multiple) — disk storage (legacy, unused in production)
 export const uploadListingImages = multer({
   storage: createStorage("listings"),
   limits: { fileSize: config.maxFileSize },
+  fileFilter: imageFilter,
+}).array("images", 10);
+
+// Listing images upload — memory storage (converts to base64 for Neon JSONB, no disk writes)
+export const uploadListingImagesMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB per file
   fileFilter: imageFilter,
 }).array("images", 10);
 
