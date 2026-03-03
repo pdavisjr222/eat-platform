@@ -4,9 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { ArrowLeft, Trash2, Upload, X } from "lucide-react";
-import { getToken } from "@/lib/auth";
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -31,6 +28,14 @@ import { type Listing } from "@shared/schema";
 import { z } from "zod";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
+
+const toBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const editListingFormSchema = z.object({
   type: z.string().min(1),
@@ -160,18 +165,9 @@ export default function EditListingPage() {
     if (!newFiles.length) return;
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      newFiles.forEach((file) => formData.append("images", file));
-      const token = getToken();
-      const res = await fetch(`${BASE_URL}/api/listings/${listingId}/images`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(err.error || "Upload failed");
-      }
+      const base64Images = await Promise.all(newFiles.map(toBase64));
+      const allImages = [...(listing?.images ?? []), ...base64Images];
+      await apiRequest("PUT", `/api/listings/${listingId}`, { images: allImages });
       queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       setNewFiles([]);
