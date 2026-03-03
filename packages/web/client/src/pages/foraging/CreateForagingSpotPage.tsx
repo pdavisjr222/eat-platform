@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -11,7 +12,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, X } from "lucide-react";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+
+const compressImage = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+        else { width = Math.round((width * MAX) / height); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
 
 const foragingSpotFormSchema = z.object({
   title: z.string().min(1),
@@ -34,6 +59,10 @@ const plantTypes = ["fruit", "vegetable", "herb", "nut", "berry", "mushroom", "e
 export default function CreateForagingSpotPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ForagingSpotFormData>({
     resolver: zodResolver(foragingSpotFormSchema),
@@ -59,33 +88,48 @@ export default function CreateForagingSpotPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foraging-spots"] });
-      toast({
-        title: "Success!",
-        description: "Your foraging spot has been added.",
-      });
+      toast({ title: "Success!", description: "Your foraging spot has been added." });
       setLocation("/foraging-map");
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create foraging spot",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to create foraging spot", variant: "destructive" });
     },
   });
 
-  const onSubmit = (data: ForagingSpotFormData) => {
-    createMutation.mutate(data);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: `${f.name} is too large`, description: "Max 2MB per image", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setSelectedFiles((prev) => [...prev, ...valid]);
+    valid.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (i: number) => {
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const onSubmit = async (data: ForagingSpotFormData) => {
+    let images: string[] = [];
+    if (selectedFiles.length > 0) {
+      images = await Promise.all(selectedFiles.map(compressImage));
+    }
+    createMutation.mutate({ ...data, images });
   };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <Button
-        variant="ghost"
-        onClick={() => setLocation("/foraging-map")}
-        className="mb-4"
-        data-testid="button-back"
-      >
+      <Button variant="ghost" onClick={() => setLocation("/foraging-map")} className="mb-4" data-testid="button-back">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Foraging Map
       </Button>
@@ -97,6 +141,7 @@ export default function CreateForagingSpotPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
               <FormField
                 control={form.control}
                 name="title"
@@ -104,11 +149,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Spot Title *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Mango Tree Grove"
-                        {...field}
-                        data-testid="input-title"
-                      />
+                      <Input placeholder="Mango Tree Grove" {...field} data-testid="input-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -147,12 +188,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Species (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Mangifera indica"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-species"
-                      />
+                      <Input placeholder="Mangifera indica" {...field} value={field.value || ""} data-testid="input-species" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -166,12 +202,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Description *</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Describe the foraging spot, what can be found, and any important details..."
-                        className="min-h-32"
-                        {...field}
-                        data-testid="input-description"
-                      />
+                      <Textarea placeholder="Describe the foraging spot..." className="min-h-32" {...field} data-testid="input-description" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,39 +215,22 @@ export default function CreateForagingSpotPage() {
                   name="latitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Latitude *</FormLabel>
+                      <FormLabel>Latitude</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="18.0179"
-                          {...field}
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                          data-testid="input-latitude"
-                        />
+                        <Input type="number" step="any" placeholder="18.0179" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} data-testid="input-latitude" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="longitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Longitude *</FormLabel>
+                      <FormLabel>Longitude</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="-76.8099"
-                          {...field}
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                          data-testid="input-longitude"
-                        />
+                        <Input type="number" step="any" placeholder="-76.8099" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} data-testid="input-longitude" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -231,12 +245,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Edible Parts (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Fruit, leaves"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-edible-parts"
-                      />
+                      <Input placeholder="Fruit, leaves" {...field} value={field.value || ""} data-testid="input-edible-parts" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -250,12 +259,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Seasonality (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Summer, Fall"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-seasonality"
-                      />
+                      <Input placeholder="Summer, Fall" {...field} value={field.value || ""} data-testid="input-seasonality" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -269,12 +273,7 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Benefits (optional)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Rich in vitamins, antioxidants..."
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-benefits"
-                      />
+                      <Textarea placeholder="Rich in vitamins, antioxidants..." {...field} value={field.value || ""} data-testid="input-benefits" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,56 +287,40 @@ export default function CreateForagingSpotPage() {
                   <FormItem>
                     <FormLabel>Access Notes (optional)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Public park, accessible by walking trail..."
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-access-notes"
-                      />
+                      <Textarea placeholder="Public park, accessible by walking trail..." {...field} value={field.value || ""} data-testid="input-access-notes" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URLs (optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter image URLs, one per line"
-                        {...field}
-                        value={field.value?.join('\n') || ""}
-                        onChange={(e) => {
-                          const urls = e.target.value.split('\n').filter(url => url.trim());
-                          field.onChange(urls.length > 0 ? urls : null);
-                        }}
-                        data-testid="input-images"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              {/* Photo upload */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Photos (optional)</p>
+                {previews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeFile(i)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
+                          <X className="h-3 w-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" /> Select Photos
+                </Button>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+              </div>
 
               <div className="flex gap-4">
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  data-testid="button-submit"
-                >
+                <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit">
                   {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Add Foraging Spot
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLocation("/foraging-map")}
-                  data-testid="button-cancel"
-                >
+                <Button type="button" variant="outline" onClick={() => setLocation("/foraging-map")} data-testid="button-cancel">
                   Cancel
                 </Button>
               </div>
