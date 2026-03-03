@@ -32,6 +32,7 @@ import CreateEventPage from "@/pages/events/CreateEventPage";
 import EditEventPage from "@/pages/events/EditEventPage";
 import CreateForagingSpotPage from "@/pages/foraging/CreateForagingSpotPage";
 import EditForagingSpotPage from "@/pages/foraging/EditForagingSpotPage";
+import MemberDetailPage from "@/pages/members/MemberDetailPage";
 import CreateVendorPage from "@/pages/vendors/CreateVendorPage";
 import VendorDetailPage from "@/pages/vendors/VendorDetailPage";
 import LearningPage from "@/pages/LearningPage";
@@ -202,6 +203,14 @@ function Router() {
         <AuthGuard>
           <AuthenticatedLayout>
             <MembersPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/members/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <MemberDetailPage />
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>
