@@ -208,6 +208,7 @@ router.post("/api/messages", authenticateToken, checkUserStatus, async (req: Aut
     // Send push notification
     await notificationService.notifyNewMessage(
       recipientUserId,
+      req.userId!,
       sender?.name || "A member",
       content
     );

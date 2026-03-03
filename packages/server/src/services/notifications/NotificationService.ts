@@ -264,6 +264,7 @@ export class NotificationService {
    */
   async notifyNewMessage(
     recipientId: string,
+    senderId: string,
     senderName: string,
     messagePreview: string
   ): Promise<void> {
@@ -274,7 +275,7 @@ export class NotificationService {
 
     const data: NotificationData = {
       type: "message",
-      senderId: recipientId, // Will be used for navigation
+      senderId,
       timestamp: new Date().toISOString(),
     };
 
@@ -286,6 +287,7 @@ export class NotificationService {
    */
   async notifyEventReminder(
     userId: string,
+    eventId: string,
     eventTitle: string,
     startsAt: Date
   ): Promise<void> {
@@ -298,7 +300,7 @@ export class NotificationService {
 
     const data: NotificationData = {
       type: "event_reminder",
-      eventId: userId, // Event ID for navigation
+      eventId,
       startsAt: startsAt.toISOString(),
     };
 
