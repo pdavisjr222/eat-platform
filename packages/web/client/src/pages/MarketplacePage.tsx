@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, MapPin } from "lucide-react";
 import type { Listing } from "@shared/schema";
 import { useLocation } from "wouter";
+import { resolveImageUrl } from "@/lib/utils";
 
 const listingTypes = ["all", "sell", "buy", "trade", "barter", "rent", "lease"];
 const categories = ["all", "food", "seeds", "plants", "spices", "handmade", "realEstate", "ecoTravel", "service"];
@@ -117,7 +118,7 @@ export default function MarketplacePage() {
               <div className="aspect-video bg-muted relative">
                 {listing.images && listing.images.length > 0 ? (
                   <img
-                    src={listing.images[0]}
+                    src={resolveImageUrl(listing.images[0])}
                     alt={listing.title}
                     className="w-full h-full object-cover"
                   />

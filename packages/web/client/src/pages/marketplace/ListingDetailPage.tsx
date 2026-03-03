@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { resolveImageUrl } from "@/lib/utils";
 import {
   ArrowLeft,
   MapPin,
@@ -183,7 +184,7 @@ export default function ListingDetailPage() {
           <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
             {images.length > 0 ? (
               <img
-                src={images[activeImage]}
+                src={resolveImageUrl(images[activeImage])}
                 alt={listing.title}
                 className="w-full h-full object-cover"
               />
@@ -204,7 +205,7 @@ export default function ListingDetailPage() {
                     i === activeImage ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(src)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

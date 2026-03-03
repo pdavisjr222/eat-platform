@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, MapPin, Leaf } from "lucide-react";
 import type { ForagingSpot } from "@shared/schema";
 import { useLocation } from "wouter";
+import { resolveImageUrl } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const plantTypes = ["all", "fruit", "vegetable", "herb", "nut", "berry", "mushroom", "edible-green"];
@@ -127,7 +128,7 @@ export default function ForagingMapPage() {
                 <div className="aspect-video bg-muted relative">
                   {spot.images && spot.images.length > 0 ? (
                     <img
-                      src={spot.images[0]}
+                      src={resolveImageUrl(spot.images[0])}
                       alt={spot.title}
                       className="w-full h-full object-cover"
                     />
