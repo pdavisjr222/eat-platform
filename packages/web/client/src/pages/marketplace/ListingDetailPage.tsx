@@ -345,9 +345,22 @@ export default function ListingDetailPage() {
           ) : (
             reviews.map((review: any) => (
               <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
-                <div className="flex items-center justify-between mb-1">
-                  <StarRating value={review.rating} />
-                  <span className="text-xs text-muted-foreground">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={review.reviewer?.profileImageUrl ?? undefined} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(review.reviewer?.name ?? "?")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium leading-tight">
+                        {review.reviewer?.name ?? "Community Member"}
+                      </p>
+                      <StarRating value={review.rating} />
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5">
                     {new Date(review.createdAt).toLocaleDateString()}
                   </span>
                 </div>

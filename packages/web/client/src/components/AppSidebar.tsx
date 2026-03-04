@@ -10,67 +10,32 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/lib/auth";
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Marketplace",
-    url: "/marketplace",
-    icon: ShoppingBag,
-  },
-  {
-    title: "Foraging Map",
-    url: "/foraging-map",
-    icon: Map,
-  },
-  {
-    title: "Vendors",
-    url: "/vendors",
-    icon: Sprout,
-  },
-  {
-    title: "Members",
-    url: "/members",
-    icon: Users,
-  },
-  {
-    title: "Events",
-    url: "/events",
-    icon: Calendar,
-  },
-  {
-    title: "Learning Hub",
-    url: "/learning",
-    icon: Book,
-  },
-  {
-    title: "Job Board",
-    url: "/jobs",
-    icon: Briefcase,
-  },
-  {
-    title: "Messages",
-    url: "/messages",
-    icon: MessageSquare,
-  },
-  {
-    title: "Garden Club",
-    url: "/garden-clubs",
-    icon: Leaf,
-  },
-  {
-    title: "Profile",
-    url: "/profile",
-    icon: User,
-  },
+const allNavigationItems = [
+  { title: "Dashboard",    url: "/",             icon: Home,         memberOnly: true  },
+  { title: "Marketplace",  url: "/marketplace",  icon: ShoppingBag,  memberOnly: false },
+  { title: "Foraging Map", url: "/foraging-map", icon: Map,          memberOnly: true  },
+  { title: "Vendors",      url: "/vendors",      icon: Sprout,       memberOnly: false },
+  { title: "Members",      url: "/members",      icon: Users,        memberOnly: true  },
+  { title: "Events",       url: "/events",       icon: Calendar,     memberOnly: true  },
+  { title: "Learning Hub", url: "/learning",     icon: Book,         memberOnly: true  },
+  { title: "Job Board",    url: "/jobs",         icon: Briefcase,    memberOnly: false },
+  { title: "Messages",     url: "/messages",     icon: MessageSquare,memberOnly: false },
+  { title: "Garden Club",  url: "/garden-clubs", icon: Leaf,         memberOnly: true  },
+  { title: "Profile",      url: "/profile",      icon: User,         memberOnly: true  },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  // A "member" is a user whose email has been verified
+  const isMember = (user as any)?.emailVerified === true;
+
+  const navigationItems = allNavigationItems.filter(
+    (item) => !item.memberOnly || isMember
+  );
 
   return (
     <Sidebar>

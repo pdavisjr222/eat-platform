@@ -22,6 +22,7 @@ import {
   Calendar,
   ExternalLink,
   Pencil,
+  MessageSquare,
 } from "lucide-react";
 
 const vendorTypeLabels: Record<string, string> = {
@@ -262,6 +263,17 @@ export default function VendorDetailPage() {
               {!vendor.website && !vendor.email && !vendor.phone && (
                 <p className="text-sm text-muted-foreground">No contact info provided</p>
               )}
+              {/* In-app messaging for vendors with a linked member account */}
+              {vendor.linkedUserId && !isOwner && (
+                <Button
+                  size="sm"
+                  className="w-full mt-1"
+                  onClick={() => setLocation(`/messages?user=${vendor.linkedUserId}`)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact Vendor
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -365,9 +377,22 @@ export default function VendorDetailPage() {
               ) : (
                 reviews.map((review: any) => (
                   <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <StarRating value={review.rating} />
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={review.reviewer?.profileImageUrl ?? undefined} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {getInitials(review.reviewer?.name ?? "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium leading-tight">
+                            {review.reviewer?.name ?? "Community Member"}
+                          </p>
+                          <StarRating value={review.rating} />
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5">
                         {formatDate(review.createdAt)}
                       </span>
                     </div>
