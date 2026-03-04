@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, ShoppingBag, Copy, Check } from "lucide-react";
+import { Calendar, MapPin, ShoppingBag, Copy, Check, Leaf, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Event, Listing, ForagingSpot } from "@shared/schema";
@@ -12,6 +13,7 @@ import type { Event, Listing, ForagingSpot } from "@shared/schema";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [copiedCode, setCopiedCode] = useState(false);
 
   const { data: upcomingEvents, isLoading: eventsLoading } = useQuery<Event[]>({
@@ -47,6 +49,26 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">
           Here's what's happening in your sustainable community
         </p>
+      </div>
+
+      {/* Garden Club CTA — first prominent action */}
+      <div
+        className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-green-700 to-emerald-500 p-6 text-white cursor-pointer hover:opacity-95 transition-opacity"
+        onClick={() => setLocation("/garden-clubs")}
+      >
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-6xl opacity-20 select-none">🌿</div>
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Leaf className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-serif font-bold mb-1">Find or Start a Garden Club</h2>
+              <p className="text-green-100 text-sm">Neighbors growing &amp; sharing food &amp; seed</p>
+            </div>
+          </div>
+          <ArrowRight className="h-6 w-6 text-white/70 flex-shrink-0" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

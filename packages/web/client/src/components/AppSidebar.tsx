@@ -1,4 +1,4 @@
-import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User } from "lucide-react";
+import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User, Leaf } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -56,6 +56,11 @@ const navigationItems = [
     title: "Messages",
     url: "/messages",
     icon: MessageSquare,
+  },
+  {
+    title: "Garden Club",
+    url: "/garden-clubs",
+    icon: Leaf,
   },
   {
     title: "Profile",

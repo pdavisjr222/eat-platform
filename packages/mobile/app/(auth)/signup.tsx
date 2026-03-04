@@ -21,6 +21,8 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,28 +120,46 @@ export default function SignupScreen() {
           </Field>
 
           <Field label="Password">
-            <TextInput
-              style={styles.input}
-              placeholder="Min. 8 characters"
-              placeholderTextColor="#9ca3af"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="new-password"
-              editable={!loading}
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputInner}
+                placeholder="Min. 8 characters"
+                placeholderTextColor="#9ca3af"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete="new-password"
+                editable={!loading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword((p) => !p)}
+                style={styles.eyeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
           </Field>
 
           <Field label="Confirm Password">
-            <TextInput
-              style={styles.input}
-              placeholder="Repeat your password"
-              placeholderTextColor="#9ca3af"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              editable={!loading}
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputInner}
+                placeholder="Repeat your password"
+                placeholderTextColor="#9ca3af"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirm}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirm((p) => !p)}
+                style={styles.eyeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.eyeIcon}>{showConfirm ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
           </Field>
 
           <Field label="Referral Code (optional)">
@@ -235,6 +255,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     marginBottom: 16,
   },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    backgroundColor: "#f9fafb",
+    marginBottom: 16,
+  },
+  inputInner: {
+    flex: 1,
+    padding: 14,
+    fontSize: 16,
+    color: "#111827",
+  },
+  eyeBtn: { paddingRight: 14 },
+  eyeIcon: { fontSize: 18 },
   button: {
     backgroundColor: "#22c55e",
     paddingVertical: 16,

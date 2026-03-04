@@ -21,6 +21,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,18 +105,27 @@ export default function LoginScreen() {
           />
 
           <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Your password"
-            placeholderTextColor="#9ca3af"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-            editable={!loading}
-            onSubmitEditing={handleLogin}
-            returnKeyType="done"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.inputInner}
+              placeholder="Your password"
+              placeholderTextColor="#9ca3af"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
+              editable={!loading}
+              onSubmitEditing={handleLogin}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword((p) => !p)}
+              style={styles.eyeBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁️"}</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             onPress={handleForgotPassword}
@@ -195,6 +205,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     marginBottom: 16,
   },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    backgroundColor: "#f9fafb",
+    marginBottom: 16,
+  },
+  inputInner: {
+    flex: 1,
+    padding: 14,
+    fontSize: 16,
+    color: "#111827",
+  },
+  eyeBtn: { paddingRight: 14 },
+  eyeIcon: { fontSize: 18 },
   forgotLink: { alignSelf: "flex-end", marginBottom: 24, marginTop: -8 },
   forgotText: { fontSize: 14, color: "#22c55e", fontWeight: "500" },
   button: {
