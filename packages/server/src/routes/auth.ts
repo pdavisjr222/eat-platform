@@ -113,12 +113,8 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
     // Send verification email
     await sendVerificationEmail(email, name, verificationData.token);
 
-    const token = generateToken(newUser.id);
-
     res.status(201).json({
-      user: sanitizeUser(newUser),
-      token,
-      message: "Please check your email to verify your account",
+      message: "Account created. Please check your email to verify your account before logging in.",
     });
   } catch (error: any) {
     console.error("Signup error:", error);

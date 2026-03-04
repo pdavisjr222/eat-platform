@@ -2,322 +2,270 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
+  Platform,
+  Image,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../src/lib/auth";
-import { useProfile } from "../src/lib/hooks";
-import { authApi, ApiRequestError } from "../src/lib/api";
+import { apiRequest } from "../src/lib/api";
+
+const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:5000").replace(/\/$/, "");
+
+function resolveImageUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url}`;
+}
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { token, setAuth } = useAuthStore();
-  const { data } = useProfile();
-  const profile = data?.user;
+  const { user, token, setAuth } = useAuthStore();
 
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [country, setCountry] = useState("");
-  const [region, setRegion] = useState("");
-  const [city, setCity] = useState("");
-  const [interests, setInterests] = useState("");
-  const [skills, setSkills] = useState("");
-  const [offerings, setOfferings] = useState("");
-  const [loading, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState((user as any)?.name ?? "");
+  const [bio, setBio] = useState((user as any)?.bio ?? "");
+  const [city, setCity] = useState((user as any)?.city ?? "");
+  const [region, setRegion] = useState((user as any)?.region ?? "");
+  const [country, setCountry] = useState((user as any)?.country ?? "");
+  const [interests, setInterests] = useState<string>((user as any)?.interests?.join(", ") ?? "");
+  const [skills, setSkills] = useState<string>((user as any)?.skills?.join(", ") ?? "");
+  const [offerings, setOfferings] = useState<string>((user as any)?.offerings?.join(", ") ?? "");
+  const [avatarUri, setAvatarUri] = useState<string | undefined>(
+    resolveImageUrl((user as any)?.profileImageUrl)
+  );
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  // Pre-fill with current profile data
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name ?? "");
-      setBio(profile.bio ?? "");
-      setCountry(profile.country ?? "");
-      setRegion(profile.region ?? "");
-      setCity(profile.city ?? "");
-      setInterests((profile.interests ?? []).join(", "));
-      setSkills((profile.skills ?? []).join(", "));
-      setOfferings((profile.offerings ?? []).join(", "));
-    }
-  }, [profile]);
+  const splitTags = (s: string) =>
+    s.split(",").map((t) => t.trim()).filter(Boolean);
 
-  function parseCSV(val: string): string[] {
-    return val
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
-  async function handleSave() {
-    if (!name.trim()) {
-      setError("Name is required.");
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission required", "Allow access to your photo library to upload a profile picture.");
       return;
     }
-    setError(null);
-    setSaving(true);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    setUploadingPhoto(true);
     try {
-      const result = await authApi.updateProfile(token!, {
+      const formData = new FormData();
+      formData.append("image", {
+        uri: asset.uri,
+        type: asset.mimeType ?? "image/jpeg",
+        name: "profile.jpg",
+      } as any);
+
+      const res = await fetch(`${API_BASE}/api/profile/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setAvatarUri(resolveImageUrl(data.imageUrl));
+    } catch (err: any) {
+      Alert.alert("Upload failed", err.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PUT", "/api/profile", {
         name: name.trim(),
         bio: bio.trim() || undefined,
-        country: country.trim() || undefined,
-        region: region.trim() || undefined,
         city: city.trim() || undefined,
-        interests: interests.trim() ? parseCSV(interests) : [],
-        skills: skills.trim() ? parseCSV(skills) : [],
-        offerings: offerings.trim() ? parseCSV(offerings) : [],
+        region: region.trim() || undefined,
+        country: country.trim() || undefined,
+        interests: splitTags(interests),
+        skills: splitTags(skills),
+        offerings: splitTags(offerings),
       });
-      // Update auth store with fresh user data
-      setAuth(token!, result.user);
-      // Invalidate profile query so profile screen refreshes
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      if (token && data.user) setAuth(token, data.user);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       router.back();
-    } catch (err) {
-      if (err instanceof ApiRequestError) {
-        setError(err.message);
-      } else {
-        setError("Network error. Please try again.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+    onError: (err: any) => {
+      Alert.alert("Save failed", err.message || "Please try again.");
+    },
+  });
 
-  function handleCancel() {
-    Alert.alert("Discard Changes?", "Your unsaved changes will be lost.", [
-      { text: "Keep Editing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: () => router.back() },
-    ]);
-  }
+  const initials = name
+    .split(" ").map((n: string) => n[0] ?? "").join("").toUpperCase().slice(0, 2) || "?";
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Header */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={handleCancel} disabled={loading}>
-          <Text style={styles.cancelText}>Cancel</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.backArrow}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#22c55e" />
-          ) : (
-            <Text style={styles.saveText}>Save</Text>
-          )}
+        <TouchableOpacity
+          onPress={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending || !name.trim()}
+          style={[styles.saveBtn, (!name.trim() || saveMutation.isPending) && styles.saveBtnDisabled]}
+        >
+          {saveMutation.isPending
+            ? <ActivityIndicator size="small" color="#ffffff" />
+            : <Text style={styles.saveBtnText}>Save</Text>}
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+      {/* Photo */}
+      <View style={styles.photoSection}>
+        <TouchableOpacity onPress={pickPhoto} disabled={uploadingPhoto} style={styles.avatarWrap}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </View>
+          )}
+          <View style={styles.cameraOverlay}>
+            {uploadingPhoto
+              ? <ActivityIndicator size="small" color="#ffffff" />
+              : <Text style={styles.cameraIcon}>📷</Text>}
           </View>
-        ) : null}
+        </TouchableOpacity>
+        <Text style={styles.photoHint}>Tap to change photo</Text>
+      </View>
 
-        <Section title="Basic Info">
-          <Field label="Full Name *">
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your full name"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="words"
-              editable={!loading}
-            />
-          </Field>
-          <Field label="Bio">
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell the community about yourself..."
-              placeholderTextColor="#9ca3af"
-              multiline
-              numberOfLines={3}
-              editable={!loading}
-            />
-          </Field>
-        </Section>
+      {/* Basic Info */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Basic Information</Text>
+        <Field label="Name *" value={name} onChangeText={setName} placeholder="Your full name" />
+        <Field label="Bio" value={bio} onChangeText={setBio} placeholder="Tell the community about yourself..." multiline />
+      </View>
 
-        <Section title="Location">
-          <Field label="Country">
-            <TextInput
-              style={styles.input}
-              value={country}
-              onChangeText={setCountry}
-              placeholder="e.g. United States"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="words"
-              editable={!loading}
-            />
-          </Field>
-          <Field label="Region / State">
-            <TextInput
-              style={styles.input}
-              value={region}
-              onChangeText={setRegion}
-              placeholder="e.g. California"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="words"
-              editable={!loading}
-            />
-          </Field>
-          <Field label="City">
-            <TextInput
-              style={styles.input}
-              value={city}
-              onChangeText={setCity}
-              placeholder="e.g. Los Angeles"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="words"
-              editable={!loading}
-            />
-          </Field>
-        </Section>
+      {/* Location */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Location</Text>
+        <Field label="City" value={city} onChangeText={setCity} placeholder="Kingston" />
+        <Field label="Region / State" value={region} onChangeText={setRegion} placeholder="Surrey" />
+        <Field label="Country" value={country} onChangeText={setCountry} placeholder="Jamaica" />
+      </View>
 
-        <Section title="Community Info">
-          <Text style={styles.hint}>Separate multiple items with commas</Text>
-          <Field label="Interests">
-            <TextInput
-              style={styles.input}
-              value={interests}
-              onChangeText={setInterests}
-              placeholder="e.g. Foraging, Organic Farming, Bees"
-              placeholderTextColor="#9ca3af"
-              editable={!loading}
-            />
-          </Field>
-          <Field label="Skills">
-            <TextInput
-              style={styles.input}
-              value={skills}
-              onChangeText={setSkills}
-              placeholder="e.g. Permaculture, Seed Saving, Cooking"
-              placeholderTextColor="#9ca3af"
-              editable={!loading}
-            />
-          </Field>
-          <Field label="What I Offer">
-            <TextInput
-              style={styles.input}
-              value={offerings}
-              onChangeText={setOfferings}
-              placeholder="e.g. Fresh Eggs, Herb Cuttings, Workshops"
-              placeholderTextColor="#9ca3af"
-              editable={!loading}
-            />
-          </Field>
-        </Section>
+      {/* Tags */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Interests, Skills & Offerings</Text>
+        <Text style={styles.tagHint}>Separate each item with a comma</Text>
+        <Field label="Interests" value={interests} onChangeText={setInterests} placeholder="permaculture, foraging, beekeeping" />
+        <Field label="Skills" value={skills} onChangeText={setSkills} placeholder="seed saving, woodworking" />
+        <Field label="Offerings" value={offerings} onChangeText={setOfferings} placeholder="fresh produce, herbal teas" />
+      </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View style={{ height: 60 }} />
+    </ScrollView>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Field({
+  label, value, onChangeText, placeholder, multiline,
+}: {
+  label: string; value: string; onChangeText: (t: string) => void; placeholder?: string; multiline?: boolean;
+}) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+    <View style={fieldStyles.wrap}>
+      <Text style={fieldStyles.label}>{label}</Text>
+      <TextInput
+        style={[fieldStyles.input, multiline && fieldStyles.multiline]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#9ca3af"
+        multiline={multiline}
+        textAlignVertical={multiline ? "top" : "center"}
+      />
     </View>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#f9fafb" },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 56 : 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
-  cancelText: { fontSize: 16, color: "#6b7280" },
-  headerTitle: { fontSize: 17, fontWeight: "600", color: "#111827" },
-  saveText: { fontSize: 16, fontWeight: "600", color: "#22c55e" },
-  scroll: { flex: 1 },
-  container: { padding: 16 },
-  errorBox: {
-    backgroundColor: "#fef2f2",
-    borderWidth: 1,
-    borderColor: "#fecaca",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: { color: "#dc2626", fontSize: 14 },
-  section: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6b7280",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  sectionCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#f3f4f6",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  hint: {
-    fontSize: 12,
-    color: "#9ca3af",
-    marginBottom: 4,
-    marginLeft: 4,
-  },
-  field: { marginBottom: 12 },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 6,
-  },
+const fieldStyles = StyleSheet.create({
+  wrap: { marginBottom: 14 },
+  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 5 },
   input: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     fontSize: 15,
     color: "#111827",
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#fafafa",
   },
-  multiline: {
-    minHeight: 80,
-    textAlignVertical: "top",
+  multiline: { minHeight: 90, paddingTop: 10 },
+});
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f9fafb" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 56 : 16,
+    paddingBottom: 12,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
   },
+  backBtn: { padding: 4, minWidth: 40 },
+  backArrow: { fontSize: 32, color: "#22c55e", lineHeight: 36 },
+  headerTitle: { fontSize: 17, fontWeight: "700", color: "#111827" },
+  saveBtn: {
+    backgroundColor: "#22c55e",
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 8,
+    minWidth: 60,
+    alignItems: "center",
+  },
+  saveBtnDisabled: { backgroundColor: "#d1d5db" },
+  saveBtnText: { color: "#ffffff", fontWeight: "700", fontSize: 15 },
+  photoSection: { alignItems: "center", paddingVertical: 24, backgroundColor: "#ffffff", marginBottom: 12 },
+  avatarWrap: { position: "relative", width: 90, height: 90 },
+  avatar: { width: 90, height: 90, borderRadius: 45 },
+  avatarPlaceholder: {
+    width: 90, height: 90, borderRadius: 45,
+    backgroundColor: "#22c55e",
+    alignItems: "center", justifyContent: "center",
+  },
+  avatarInitials: { fontSize: 32, fontWeight: "700", color: "#ffffff" },
+  cameraOverlay: {
+    position: "absolute", bottom: 0, right: 0,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: "#111827",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#ffffff",
+  },
+  cameraIcon: { fontSize: 14 },
+  photoHint: { fontSize: 12, color: "#9ca3af", marginTop: 8 },
+  section: {
+    backgroundColor: "#ffffff",
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 14 },
+  tagHint: { fontSize: 12, color: "#9ca3af", marginBottom: 10, marginTop: -8 },
 });

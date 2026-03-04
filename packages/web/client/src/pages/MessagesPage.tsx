@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSearch, useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,8 @@ function dateLabel(dateStr: string) {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const search = useSearch();
+  const [, setLocation] = useLocation();
   const [selectedConv, setSelectedConv] = useState<ConversationUser | null>(null);
   const [messageText, setMessageText] = useState("");
   const [convSearch, setConvSearch] = useState("");
@@ -89,6 +92,9 @@ export default function MessagesPage() {
   const [newMsgOpen, setNewMsgOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Parse ?user= param for direct links from member profiles
+  const targetUserId = new URLSearchParams(search).get("user");
 
   // Conversations list — refresh every 10s
   const { data: conversations = [], isLoading: convsLoading } = useQuery<ConversationUser[]>({
@@ -109,6 +115,36 @@ export default function MessagesPage() {
     enabled: newMsgOpen,
     select: (res) => res.data,
   });
+
+  // Fetch target member when navigating from a profile via ?user=
+  const { data: targetMember } = useQuery<Member>({
+    queryKey: ["/api/members", targetUserId],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/members/${targetUserId}`);
+      return res.json();
+    },
+    enabled: !!targetUserId && !selectedConv,
+  });
+
+  // Auto-open conversation when target member loads
+  useEffect(() => {
+    if (!targetMember || selectedConv) return;
+    const existing = conversations.find((c) => c.id === targetMember.id);
+    setSelectedConv(
+      existing ?? {
+        id: targetMember.id,
+        name: targetMember.name,
+        email: "",
+        profileImageUrl: targetMember.profileImageUrl,
+        city: targetMember.city,
+        country: targetMember.country,
+        lastMessage: null,
+        unreadCount: 0,
+      }
+    );
+    // Clean up the URL param without a page reload
+    setLocation("/messages", { replace: true });
+  }, [targetMember, conversations]);
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {

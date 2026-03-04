@@ -1,14 +1,15 @@
-import { useState, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X, Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Form,
@@ -24,13 +25,20 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 
+const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:5000").replace(/\/$/, "");
+
+function resolveImageUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url}`;
+}
+
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   bio: z.string().max(500, "Bio must be under 500 characters").optional().or(z.literal("")),
   city: z.string().optional().or(z.literal("")),
   region: z.string().optional().or(z.literal("")),
   country: z.string().optional().or(z.literal("")),
-  profileImageUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -100,10 +108,15 @@ export default function EditProfilePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user, setAuth, token } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [interests, setInterests] = useState<string[]>((user as any)?.interests ?? []);
   const [skills, setSkills] = useState<string[]>((user as any)?.skills ?? []);
   const [offerings, setOfferings] = useState<string[]>((user as any)?.offerings ?? []);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
+    resolveImageUrl((user as any)?.profileImageUrl)
+  );
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -113,9 +126,33 @@ export default function EditProfilePage() {
       city: (user as any)?.city ?? "",
       region: (user as any)?.region ?? "",
       country: (user as any)?.country ?? "",
-      profileImageUrl: (user as any)?.profileImageUrl ?? "",
     },
   });
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`${API_BASE}/api/profile/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      const full = resolveImageUrl(data.imageUrl);
+      setAvatarUrl(full);
+      toast({ title: "Photo updated!" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const updateMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
@@ -125,7 +162,6 @@ export default function EditProfilePage() {
         city: data.city || undefined,
         region: data.region || undefined,
         country: data.country || undefined,
-        profileImageUrl: data.profileImageUrl || undefined,
         interests,
         skills,
         offerings,
@@ -169,6 +205,44 @@ export default function EditProfilePage() {
               <CardTitle className="text-base">Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+
+              {/* Photo upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarUrl} />
+                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                      {user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 10MB</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </div>
+              </div>
+
               <FormField
                 control={form.control}
                 name="name"
@@ -198,23 +272,6 @@ export default function EditProfilePage() {
                     </FormControl>
                     <FormDescription>
                       {(field.value ?? "").length}/500 characters
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="profileImageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profile Photo URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/your-photo.jpg" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Direct link to a profile image. Leave blank to use your initials.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

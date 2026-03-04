@@ -9,6 +9,7 @@ import {
   apiRateLimiter,
 } from "../middleware";
 
+import { messageService } from "../services/messaging";
 import authRouter from "./auth";
 import membersRouter from "./members";
 import listingsRouter from "./listings";
@@ -65,5 +66,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/v1/devices", deviceRoutes);
 
   const httpServer = createServer(app);
+
+  // Attach Socket.IO to the HTTP server — must happen after createServer
+  messageService.setupWebSocket(httpServer);
+
   return httpServer;
 }
