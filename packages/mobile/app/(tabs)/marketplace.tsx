@@ -41,7 +41,7 @@ export default function MarketplaceScreen() {
 
   const { data, isLoading, isError, refetch, isFetching } = useListings();
 
-  const listings = data?.listings ?? [];
+  const listings = data?.data ?? [];
 
   const filtered = listings.filter((item) => {
     const matchSearch =

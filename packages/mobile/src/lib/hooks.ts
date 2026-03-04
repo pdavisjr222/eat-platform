@@ -88,7 +88,7 @@ export function useListings(params?: {
       if (params?.category) sp.set("category", params.category);
       sp.set("limit", "20");
       sp.set("page", String(params?.page ?? 1));
-      return apiRequest<{ listings: Listing[]; total: number; page: number }>(
+      return apiRequest<{ data: Listing[]; pagination: any }>(
         `/api/listings?${sp}`,
         { token: token! }
       );
@@ -103,7 +103,7 @@ export function useMyListings() {
   return useQuery({
     queryKey: ["listings", "my-listings"],
     queryFn: () =>
-      apiRequest<{ listings: Listing[] }>("/api/listings/my-listings", {
+      apiRequest<{ data: Listing[]; pagination: any }>("/api/listings/my-listings", {
         token: token!,
       }),
     enabled: !!token,
