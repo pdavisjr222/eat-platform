@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +35,7 @@ const allNavigationItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { toast } = useToast();
   const [resent, setResent] = useState(false);
 
@@ -74,7 +76,7 @@ export function AppSidebar() {
                     isActive={location === item.url}
                     data-testid={`link-${item.title.toLowerCase().replace(" ", "-")}`}
                   >
-                    <Link href={item.url}>
+                    <Link href={item.url} onClick={() => isMobile && setOpenMobile(false)}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
