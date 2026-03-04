@@ -214,6 +214,144 @@ export function useUpcomingEvents() {
   });
 }
 
+// ─── Vendors ─────────────────────────────────────────────────────────────────
+
+export interface Vendor {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  city?: string;
+  country?: string;
+  verified: boolean;
+  rating?: number;
+  logoUrl?: string;
+}
+
+export function useVendors() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["vendors"],
+    queryFn: () =>
+      apiRequest<{ data: Vendor[] }>("/api/vendors", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+// ─── Members ─────────────────────────────────────────────────────────────────
+
+export interface Member {
+  id: string;
+  name: string;
+  bio?: string;
+  city?: string;
+  country?: string;
+  profileImageUrl?: string;
+  emailVerified: boolean;
+}
+
+export function useMembers() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["members"],
+    queryFn: () =>
+      apiRequest<{ data: Member[] }>("/api/members", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+// ─── Events (full list) ───────────────────────────────────────────────────────
+
+export function useEvents() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["events", "all"],
+    queryFn: () =>
+      apiRequest<{ data: EatEvent[] }>("/api/events", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+// ─── Training Modules ─────────────────────────────────────────────────────────
+
+export interface TrainingModule {
+  id: string;
+  title: string;
+  category: string;
+  difficultyLevel: string;
+  estimatedDuration?: number;
+  isPremium: boolean;
+  imageUrl?: string;
+  description?: string;
+}
+
+export function useTrainingModules() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["training-modules"],
+    queryFn: () =>
+      apiRequest<{ data: TrainingModule[] }>("/api/training-modules", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────────────────────
+
+export interface JobPost {
+  id: string;
+  title: string;
+  description: string;
+  jobType: string;
+  locationText?: string;
+  isRemote: boolean;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  status: string;
+  createdAt: string;
+}
+
+export function useJobs() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["jobs"],
+    queryFn: () =>
+      apiRequest<{ data: JobPost[] }>("/api/jobs", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+// ─── Garden Clubs ─────────────────────────────────────────────────────────────
+
+export interface GardenClub {
+  id: string;
+  name: string;
+  description: string;
+  city?: string;
+  country?: string;
+  region?: string;
+  email?: string;
+  website?: string;
+  meetingSchedule?: string;
+  memberCount?: number;
+}
+
+export function useGardenClubs() {
+  const { token } = useAuthStore();
+  return useQuery({
+    queryKey: ["garden-clubs"],
+    queryFn: () =>
+      apiRequest<{ data: GardenClub[] }>("/api/garden-clubs", { token: token! }),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export function useNotifications() {

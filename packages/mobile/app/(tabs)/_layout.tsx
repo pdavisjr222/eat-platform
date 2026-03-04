@@ -45,6 +45,7 @@ export default function TabLayout() {
         headerTitleStyle: { fontWeight: "700", color: "#111827" },
       }}
     >
+      {/* ── Visible tabs ─────────────────────────────── */}
       <Tabs.Screen
         name="index"
         options={{
@@ -64,22 +65,22 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="map"
-        options={{
-          title: "Foraging",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="leaf" color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="messages"
         options={{
           title: "Messages",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="chatbubble" color={color} focused={focused} />
           ),
-          tabBarBadge: undefined, // populated later from unread count
+          tabBarBadge: undefined,
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="grid" color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -91,6 +92,15 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* ── Hidden screens (accessible via More) ─────── */}
+      <Tabs.Screen name="map"          options={{ href: null, title: "Foraging Map"  }} />
+      <Tabs.Screen name="vendors"      options={{ href: null, title: "Vendors"       }} />
+      <Tabs.Screen name="members"      options={{ href: null, title: "Members"       }} />
+      <Tabs.Screen name="events"       options={{ href: null, title: "Events"        }} />
+      <Tabs.Screen name="learning"     options={{ href: null, title: "Learning Hub"  }} />
+      <Tabs.Screen name="jobs"         options={{ href: null, title: "Job Board"     }} />
+      <Tabs.Screen name="garden-clubs" options={{ href: null, title: "Garden Club"   }} />
     </Tabs>
   );
 }
