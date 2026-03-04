@@ -28,7 +28,7 @@ const allNavigationItems = [
   { title: "Learning Hub", url: "/learning",     icon: Book,         memberOnly: true  },
   { title: "Job Board",    url: "/jobs",         icon: Briefcase,    memberOnly: false },
   { title: "Messages",     url: "/messages",     icon: MessageSquare,memberOnly: false },
-  { title: "Garden Club",  url: "/garden-clubs", icon: Leaf,         memberOnly: true  },
+  { title: "Garden Club",  url: "/garden-clubs", icon: Leaf,         memberOnly: false },
   { title: "Profile",      url: "/profile",      icon: User,         memberOnly: true  },
 ];
 
