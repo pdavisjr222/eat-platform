@@ -111,15 +111,9 @@ export default function GardenClubsPage() {
       </div>
 
       {/* Search */}
-      <div>
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-2xl font-serif font-bold flex-1">Find a Club Near You</h2>
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Start a Club
-          </Button>
-        </div>
-        <div className="relative max-w-md mb-6">
+      <div className="flex flex-col items-center text-center">
+        <h2 className="text-2xl font-serif font-bold mb-6">Find a Club Near You</h2>
+        <div className="relative w-full max-w-md mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by city, country, or name..."
@@ -137,7 +131,7 @@ export default function GardenClubsPage() {
           { icon: "🌾", title: "Share the Harvest", desc: "Exchange surplus produce and reduce food waste" },
           { icon: "🫘", title: "Seed Library", desc: "Save, swap, and preserve heirloom seed varieties" },
         ].map((item) => (
-          <Card key={item.title} className="text-center p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowCreate(true)}>
+          <Card key={item.title} className="text-center p-4">
             <div className="text-4xl mb-3">{item.icon}</div>
             <h3 className="font-semibold mb-1">{item.title}</h3>
             <p className="text-sm text-muted-foreground">{item.desc}</p>
