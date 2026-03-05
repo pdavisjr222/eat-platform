@@ -47,7 +47,7 @@ export default function DashboardPage() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url(/bg-hero.png)" }}
       />
-      <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
+      <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px]" />
 
       <div className="relative p-4 sm:p-6 space-y-6">
       <div>
