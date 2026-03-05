@@ -64,7 +64,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-serif font-bold text-primary px-4 py-4">
+          <SidebarGroupLabel className="text-2xl font-serif font-bold text-primary px-4 py-5">
             E.A.T.
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -74,12 +74,12 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    className="text-base py-2.5 [&_svg]:h-5 [&_svg]:w-5"
+                    className="text-lg py-3 h-auto [&_svg]:h-6 [&_svg]:w-6"
                     data-testid={`link-${item.title.toLowerCase().replace(" ", "-")}`}
                   >
                     <Link href={item.url} onClick={() => isMobile && setOpenMobile(false)}>
-                      <item.icon className="h-5 w-5" />
-                      <span className="font-medium">{item.title}</span>
+                      <item.icon className="h-6 w-6" />
+                      <span className="font-semibold">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
