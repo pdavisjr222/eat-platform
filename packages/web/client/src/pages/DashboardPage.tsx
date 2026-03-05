@@ -116,11 +116,11 @@ export default function DashboardPage() {
         </Card>
 
         {/* Accordion sections */}
-        <Accordion type="multiple" defaultValue={["events"]} className="space-y-3">
+        <Accordion type="multiple" defaultValue={[]} className="space-y-3">
           {/* Upcoming Events */}
           <AccordionItem value="events" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-base font-semibold">
+              <div className="flex items-center gap-2 text-lg font-bold">
                 <Calendar className="h-5 w-5 text-primary" />
                 Upcoming Events
                 {upcomingEvents && upcomingEvents.length > 0 && (
@@ -142,8 +142,8 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/events/${event.id}`)}
                       data-testid={`card-event-${event.id}`}
                     >
-                      <h4 className="font-semibold text-sm mb-0.5">{event.title}</h4>
-                      <p className="text-xs text-muted-foreground">
+                      <h4 className="font-semibold text-base mb-0.5">{event.title}</h4>
+                      <p className="text-sm text-foreground/70">
                         {new Date(event.startDateTime).toLocaleDateString()} • {event.type}
                       </p>
                     </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No upcoming events</p>
+                <p className="text-base text-foreground/70 text-center py-4">No upcoming events</p>
               )}
             </AccordionContent>
           </AccordionItem>
@@ -161,7 +161,7 @@ export default function DashboardPage() {
           {/* Nearby Listings */}
           <AccordionItem value="listings" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-base font-semibold">
+              <div className="flex items-center gap-2 text-lg font-bold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
                 Nearby Listings
                 {nearbyListings && nearbyListings.length > 0 && (
@@ -183,9 +183,9 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/marketplace/${listing.id}`)}
                       data-testid={`card-listing-${listing.id}`}
                     >
-                      <h4 className="font-semibold text-sm mb-1">{listing.title}</h4>
-                      <div className="flex items-center justify-between text-xs">
-                        <Badge variant="secondary" className="text-xs">{listing.type}</Badge>
+                      <h4 className="font-semibold text-base mb-1">{listing.title}</h4>
+                      <div className="flex items-center justify-between text-sm">
+                        <Badge variant="secondary" className="text-sm">{listing.type}</Badge>
                         {listing.price && (
                           <span className="font-semibold text-primary">${listing.price}</span>
                         )}
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No nearby listings</p>
+                <p className="text-base text-foreground/70 text-center py-4">No nearby listings</p>
               )}
             </AccordionContent>
           </AccordionItem>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           {/* New Foraging Spots */}
           <AccordionItem value="spots" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-base font-semibold">
+              <div className="flex items-center gap-2 text-lg font-bold">
                 <MapPin className="h-5 w-5 text-primary" />
                 New Foraging Spots
                 {newForagingSpots && newForagingSpots.length > 0 && (
@@ -227,10 +227,10 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/foraging-map/${spot.id}`)}
                       data-testid={`card-spot-${spot.id}`}
                     >
-                      <h4 className="font-semibold text-sm mb-1">{spot.title}</h4>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <h4 className="font-semibold text-base mb-1">{spot.title}</h4>
+                      <div className="flex items-center gap-2 text-sm text-foreground/70">
                         <span className="capitalize">{spot.plantType}</span>
-                        <Badge variant="outline" className="text-xs">{spot.seasonality || "Year-round"}</Badge>
+                        <Badge variant="outline" className="text-sm">{spot.seasonality || "Year-round"}</Badge>
                       </div>
                     </div>
                   ))}
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No new foraging spots</p>
+                <p className="text-base text-foreground/70 text-center py-4">No new foraging spots</p>
               )}
             </AccordionContent>
           </AccordionItem>
