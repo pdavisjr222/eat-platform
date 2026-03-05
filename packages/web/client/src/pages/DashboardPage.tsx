@@ -41,7 +41,15 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="relative min-h-full">
+      {/* Hero background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url(/bg-hero.png)" }}
+      />
+      <div className="absolute inset-0 bg-background/85 backdrop-blur-[1px]" />
+
+      <div className="relative p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
           Welcome back, {user?.name}!
@@ -246,6 +254,7 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

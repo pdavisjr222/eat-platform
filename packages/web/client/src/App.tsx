@@ -83,7 +83,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between p-4 border-b bg-background">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <SidebarTrigger className="h-10 w-10 [&_svg]:h-6 [&_svg]:w-6" data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
           {showBanner && (
@@ -106,7 +106,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           )}
-          <main className="flex-1 overflow-auto bg-background">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>

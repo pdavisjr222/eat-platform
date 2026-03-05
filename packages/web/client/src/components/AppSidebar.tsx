@@ -74,11 +74,12 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
+                    className="text-base py-2.5 [&_svg]:h-5 [&_svg]:w-5"
                     data-testid={`link-${item.title.toLowerCase().replace(" ", "-")}`}
                   >
                     <Link href={item.url} onClick={() => isMobile && setOpenMobile(false)}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5" />
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
