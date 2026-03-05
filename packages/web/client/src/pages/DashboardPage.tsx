@@ -69,7 +69,7 @@ export default function DashboardPage() {
                 <Leaf className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-serif font-bold mb-1">Find or Start a Garden Club</h2>
+                <h2 className="text-sm sm:text-base md:text-xl font-serif font-bold mb-1 whitespace-nowrap">Find or Start a Garden Club</h2>
                 <p className="text-green-100 text-sm">Neighbors growing &amp; sharing food &amp; seed</p>
               </div>
             </div>
