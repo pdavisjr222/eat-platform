@@ -39,10 +39,10 @@ export default function VendorsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
             Eco-Friendly Vendors
           </h1>
           <p className="text-muted-foreground">
@@ -85,7 +85,7 @@ export default function VendorsPage() {
       </Card>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="p-6">
               <div className="flex items-start gap-4">
@@ -100,7 +100,7 @@ export default function VendorsPage() {
           ))}
         </div>
       ) : filteredVendors && filteredVendors.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVendors.map((vendor) => (
             <Card
               key={vendor.id}

@@ -73,9 +73,9 @@ export default function GardenClubsPage() {
   );
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 sm:p-6 space-y-8">
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 p-8 text-white">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 p-5 sm:p-8 text-white">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-8 text-9xl">🌿</div>
           <div className="absolute bottom-4 left-8 text-7xl">🥕</div>
@@ -85,7 +85,7 @@ export default function GardenClubsPage() {
             <Leaf className="h-6 w-6" />
             <span className="text-green-100 font-medium uppercase text-sm tracking-wider">Garden Clubs</span>
           </div>
-          <h1 className="text-4xl font-serif font-bold mb-3">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold mb-3">
             Neighbors Growing &amp; Sharing Food &amp; Seed
           </h1>
           <p className="text-green-100 text-lg mb-6">
@@ -111,7 +111,7 @@ export default function GardenClubsPage() {
       </div>
 
       {/* How it works */}
-      <div ref={howItWorksRef} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div ref={howItWorksRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {[
           { icon: "🌱", title: "Grow Together", desc: "Share knowledge, tools, and growing tips with neighbors" },
           { icon: "🌾", title: "Share the Harvest", desc: "Exchange surplus produce and reduce food waste" },
@@ -147,7 +147,7 @@ export default function GardenClubsPage() {
 
       {/* Club list */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardHeader>
@@ -161,7 +161,7 @@ export default function GardenClubsPage() {
           ))}
         </div>
       ) : filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((club) => (
             <Card key={club.id} className="hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader className="pb-3">
@@ -292,7 +292,7 @@ export default function GardenClubsPage() {
               <Label>Description *</Label>
               <Textarea placeholder="What does your club do?" rows={3} {...field("description")} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>City</Label>
                 <Input placeholder="City" {...field("city")} />
@@ -306,7 +306,7 @@ export default function GardenClubsPage() {
               <Label>Meeting Schedule</Label>
               <Input placeholder="e.g. Every 2nd Saturday" {...field("meetingSchedule")} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Email</Label>
                 <Input placeholder="contact@club.org" type="email" {...field("email")} />

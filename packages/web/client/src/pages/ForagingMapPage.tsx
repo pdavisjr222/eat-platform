@@ -59,10 +59,10 @@ export default function ForagingMapPage() {
   const spotsWithCoords = filteredSpots?.filter((s) => s.latitude != null && s.longitude != null) ?? [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-foreground mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
             Foraging Map
           </h1>
           <p className="text-muted-foreground">
@@ -78,8 +78,8 @@ export default function ForagingMapPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
           <Card className="overflow-hidden">
             <div className="h-[420px] w-full relative">
               <MapContainer
@@ -162,7 +162,7 @@ export default function ForagingMapPage() {
       <div>
         <h2 className="text-2xl font-serif font-bold mb-4">Foraging Spots</h2>
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i}>
                 <Skeleton className="h-48 w-full rounded-t-md" />
@@ -175,7 +175,7 @@ export default function ForagingMapPage() {
             ))}
           </div>
         ) : filteredSpots && filteredSpots.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSpots.map((spot) => (
               <Card
                 key={spot.id}

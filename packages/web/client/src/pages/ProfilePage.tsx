@@ -42,9 +42,9 @@ export default function ProfilePage() {
     : "N/A";
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-serif font-bold text-foreground">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground">
           My Profile
         </h1>
         <Button
@@ -57,7 +57,7 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardContent className="p-6">

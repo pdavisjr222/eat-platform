@@ -60,10 +60,10 @@ export default function LearningPage() {
   return (
     <div className="space-y-0">
       {/* Hero banner */}
-      <div className="bg-gradient-to-br from-green-800 via-green-700 to-emerald-600 px-6 py-12 text-white">
+      <div className="bg-gradient-to-br from-green-800 via-green-700 to-emerald-600 px-4 sm:px-6 py-8 sm:py-12 text-white">
         <div className="max-w-3xl">
           <p className="text-green-200 text-sm font-medium uppercase tracking-widest mb-3">E.A.T. Learning Hub</p>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4 leading-tight">
             Grow Your Knowledge,<br />Grow Your Community
           </h1>
           <p className="text-green-100 text-lg mb-6 max-w-xl">
@@ -86,7 +86,7 @@ export default function LearningPage() {
         </div>
       </div>
 
-      <div className="p-6 space-y-8">
+      <div className="p-4 sm:p-6 space-y-8">
         {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {categories.map((cat) => (
@@ -190,7 +190,7 @@ export default function LearningPage() {
                 <h2 className="text-xl font-serif font-semibold mb-4">
                   {selectedCategory === "all" ? "All Courses" : categories.find((c) => c.value === selectedCategory)?.label}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {rest.map((module) => {
                     const gradient = categoryColors[module.category] ?? categoryColors.default;
                     const emoji = categoryEmoji[module.category] ?? categoryEmoji.default;
