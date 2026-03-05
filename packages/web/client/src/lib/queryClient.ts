@@ -15,6 +15,12 @@ function getAuthHeaders(): HeadersInit {
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    if (res.status === 401) {
+      // Token expired or invalid — clear auth and send to login
+      useAuth.getState().clearAuth();
+      window.location.replace("/auth/login");
+      throw new Error("Session expired. Please log in again.");
+    }
     if (res.status === 413) {
       throw new Error("Images too large. Try fewer or smaller photos.");
     }

@@ -200,6 +200,22 @@
  * Even without handling focused or not, this is six possible combinations that
  * need to be distinguished from eachother visually.
  */
+/* ─── Leaflet overrides ────────────────────────────────────────────────────
+   Tailwind's preflight sets max-width:100% on all <img> elements, which
+   shrinks Leaflet tile images and breaks tile rendering / pointer events.
+   These rules must live outside @layer so they win the specificity race.
+─────────────────────────────────────────────────────────────────────────── */
+.leaflet-container {
+  font-family: inherit;
+}
+.leaflet-container img,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  max-width: none !important;
+  border: none !important;
+}
+
 @layer utilities {
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
