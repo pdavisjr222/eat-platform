@@ -144,7 +144,7 @@ export default function VendorsPage() {
                 </div>
               </CardContent>
               <CardFooter className="px-6 py-3 bg-muted/30 border-t">
-                <Button variant="ghost" size="sm" className="w-full">
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => setLocation(`/vendors/${vendor.id}`)}>
                   View Details
                 </Button>
               </CardFooter>

@@ -31,6 +31,7 @@ const emptyForm = { name: "", description: "", city: "", country: "", region: ""
 export default function GardenClubsPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [viewClub, setViewClub] = useState<GardenClub | null>(null);
   const [form, setForm] = useState(emptyForm);
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -212,7 +213,7 @@ export default function GardenClubsPage() {
                     </Button>
                   )}
                   {!club.email && !club.website && (
-                    <Button size="sm" variant="outline" className="w-full text-xs">View Details</Button>
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setViewClub(club)}>View Details</Button>
                   )}
                 </div>
               </CardContent>
@@ -238,6 +239,43 @@ export default function GardenClubsPage() {
           </div>
         </Card>
       )}
+
+      {/* View Club Detail Dialog */}
+      <Dialog open={!!viewClub} onOpenChange={() => setViewClub(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Leaf className="h-5 w-5 text-green-600" />
+              {viewClub?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {(viewClub?.city || viewClub?.country) && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                {[viewClub.city, viewClub.region, viewClub.country].filter(Boolean).join(", ")}
+              </div>
+            )}
+            {viewClub?.memberCount && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                {viewClub.memberCount} members
+              </div>
+            )}
+            {viewClub?.meetingSchedule && (
+              <Badge variant="outline">{viewClub.meetingSchedule}</Badge>
+            )}
+            <p className="text-sm text-muted-foreground leading-relaxed">{viewClub?.description}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewClub(null)}>Close</Button>
+            <Button onClick={() => { setViewClub(null); setShowCreate(true); }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Start a Club Like This
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Garden Club Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
