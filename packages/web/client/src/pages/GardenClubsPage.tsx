@@ -110,21 +110,6 @@ export default function GardenClubsPage() {
         </div>
       </div>
 
-      {/* How it works */}
-      <div ref={howItWorksRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {[
-          { icon: "🌱", title: "Grow Together", desc: "Share knowledge, tools, and growing tips with neighbors" },
-          { icon: "🌾", title: "Share the Harvest", desc: "Exchange surplus produce and reduce food waste" },
-          { icon: "🫘", title: "Seed Library", desc: "Save, swap, and preserve heirloom seed varieties" },
-        ].map((item) => (
-          <Card key={item.title} className="text-center p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowCreate(true)}>
-            <div className="text-4xl mb-3">{item.icon}</div>
-            <h3 className="font-semibold mb-1">{item.title}</h3>
-            <p className="text-sm text-muted-foreground">{item.desc}</p>
-          </Card>
-        ))}
-      </div>
-
       {/* Search */}
       <div>
         <div className="flex items-center gap-3 mb-6">
@@ -143,6 +128,21 @@ export default function GardenClubsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+      </div>
+
+      {/* How it works */}
+      <div ref={howItWorksRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {[
+          { icon: "🌱", title: "Grow Together", desc: "Share knowledge, tools, and growing tips with neighbors" },
+          { icon: "🌾", title: "Share the Harvest", desc: "Exchange surplus produce and reduce food waste" },
+          { icon: "🫘", title: "Seed Library", desc: "Save, swap, and preserve heirloom seed varieties" },
+        ].map((item) => (
+          <Card key={item.title} className="text-center p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowCreate(true)}>
+            <div className="text-4xl mb-3">{item.icon}</div>
+            <h3 className="font-semibold mb-1">{item.title}</h3>
+            <p className="text-sm text-muted-foreground">{item.desc}</p>
+          </Card>
+        ))}
       </div>
 
       {/* Club list */}
