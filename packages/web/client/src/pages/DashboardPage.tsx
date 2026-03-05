@@ -52,7 +52,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
             Welcome back, {user?.name}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-base font-medium text-foreground/90">
             Here's what's happening in your sustainable community
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h2 className="text-sm sm:text-base md:text-xl font-serif font-bold mb-1 whitespace-nowrap">Find or Start a Garden Club</h2>
-                <p className="text-green-100 text-sm">Neighbors growing &amp; sharing food &amp; seed</p>
+                <p className="text-white text-xs sm:text-sm whitespace-nowrap">Neighbors growing &amp; sharing food &amp; seed</p>
               </div>
             </div>
             <ArrowRight className="h-6 w-6 text-white/70 flex-shrink-0" />
@@ -83,9 +83,9 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-5">
               {/* Credits */}
               <div className="flex-shrink-0">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Credit Balance</p>
+                <p className="text-base font-semibold text-foreground mb-1">Credit Balance</p>
                 <div className="text-4xl font-bold text-primary">{user?.creditBalance || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">Available for rewards</p>
+                <p className="text-sm text-foreground/70 mt-1">Available for rewards</p>
               </div>
 
               <div className="hidden sm:block w-px self-stretch bg-border" />
@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
               {/* Referral code */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Your Referral Code</p>
+                <p className="text-base font-semibold text-foreground mb-2">Your Referral Code</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 min-w-0 px-3 py-2 bg-muted rounded-md text-base font-mono font-semibold truncate">
                     {user?.referralCode || "Generating..."}
@@ -107,7 +107,7 @@ export default function DashboardPage() {
                     {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-sm text-foreground/70 mt-1">
                   Share to earn credits when friends join
                 </p>
               </div>
