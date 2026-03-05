@@ -71,11 +71,16 @@ EcologyAgricultureTrade/
 - Web UI: ThemeToggle — `h-10 w-10 border-2 shadow-sm`, icons `h-6 w-6`
 - Web UI: SidebarTrigger — `h-10 w-10 [&_svg]:h-6 [&_svg]:w-6`
 - Web UI: AppSidebar nav items — `text-lg py-3 h-auto`, icons `h-6 w-6`, `font-semibold`; E.A.T. label `text-2xl`
-- Web UI: GardenClubsPage — "Find a Club Near You" section appears directly below hero
+- Web UI: GardenClubsPage — "Find a Club Near You" centered, duplicate "Start a Club" button removed, "how it works" cards are informational only (no onClick)
+- Web UI: MarketplacePage type tabs — `flex flex-wrap justify-center` (two rows, centered; was horizontal scroll)
+- Web UI: font sizes bumped across Dashboard (CTA `text-2xl sm:text-3xl`, accordion headers `text-2xl`, item titles `text-lg`), Marketplace cards (`text-base`/`text-sm`), Learning cards (`text-base`/`text-sm`)
+- Web: queryClient — 401 responses auto-clear auth + `window.location.replace('/auth/login')` (prevents stale token loops)
+- Web: index.css — Leaflet CSS overrides: `max-width: none !important; border: none !important` on `.leaflet-container img`, `.leaflet-tile`, `.leaflet-marker-icon`, `.leaflet-marker-shadow` (fixes Tailwind preflight conflict)
+- Web: CreateForagingSpotPage — replaced plain lat/lng inputs with clickable Leaflet map; click to drop marker, "Use my location" GPS button; inputs remain as editable fallback
 - Web: typed API client (lib/api.ts), IndexedDB init on App mount, ErrorBoundary in main.tsx
 - Web: auth.ts — Zustand store (`useAuth`) for reactive state + plain `getToken`/`setToken` for non-hook contexts
 - Web: AppSidebar — member-gating via `memberOnly` flag; `emailVerified === true` = member; "Become a Member" prompt for unverified users
-- Web: Garden Clubs page — all buttons active (create dialog, Learn More scroll, feature cards clickable)
+- Web: Garden Clubs page — create dialog, Learn More scroll anchor working
 - Server: request timeout middleware (30s), Stripe webhook secret production validation
 - Server: `packages/server/src/routes/gardenClubs.ts` — full CRUD for `/api/garden-clubs`
 - CI/CD: fixed railway link bug, fixed health check URL (/api/health), fixed EAS profile
