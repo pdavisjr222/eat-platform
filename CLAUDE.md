@@ -108,29 +108,9 @@ EcologyAgricultureTrade/
 
 ## Error Handling Standards
 
-**Every function MUST:**
-```typescript
-try {
-  if (!input) throw new Error("Input required");
-  const result = await operation();
-  logger.info("Operation succeeded", { result });
-  return result;
-} catch (error) {
-  logger.error("Operation failed", { error, input });
-  throw new AppError("Operation failed", 500, { cause: error });
-}
-```
-
-**API routes MUST:**
-- Validate request body with Zod
-- Use try/catch blocks
-- Return structured errors: `{ error: string, details?: any }`
-- Return appropriate status codes: 400, 401, 403, 404, 409, 500
-
-**Database operations MUST:**
-- Use transactions for multi-step operations
-- Handle unique constraint violations + foreign key violations
-- Retry on deadlocks (max 3 attempts)
+- Validate inputs → try/catch → log with context → throw `AppError` or structured `{ error, details }`
+- API routes: Zod validation, status codes 400/401/403/404/409/500
+- DB: transactions for multi-step ops, handle unique/FK violations, retry deadlocks (max 3)
 
 ---
 
@@ -149,45 +129,12 @@ version, syncStatus, lastSyncedAt, deviceId, isDeleted, deletedAt
 ```
 
 ### Main Tables (25)
-
-| Table | Key Fields |
-|-------|-----------|
-| `users` | id, name, email, passwordHash, country, region, city, bio, profileImageUrl, interests[], skills[], offerings[], referralCode, referredBy, creditBalance, role, emailVerified, isPremium, stripeCustomerId, isActive, isBanned |
-| `memberProfiles` | id, userId(FK), website, socialLinks, phoneNumber, address |
-| `listings` | id, ownerUserId(FK), type(sell/buy/trade/barter/rent/lease), category, title, description, images[], price, currency, location, latitude, longitude, availabilityStatus, isFeatured, viewCount |
-| `vendors` | id, linkedUserId(FK), name, description, logoUrl, type(ecoFriendly/indigenous/serviceProvider/accommodation), website, email, phone, address, city, country, latitude, longitude, verified, rating, reviewCount |
-| `coupons` | id, vendorId(FK), title, discountType, discountValue, code, validFrom, validTo, maxUses, currentUses |
-| `foragingSpots` | id, createdByUserId(FK), latitude, longitude, title, plantType, species, description, images[], edibleParts, seasonality, benefits, accessNotes, isVerified, country, region |
-| `gardenClubs` | id, name, description, city, country, region, latitude, longitude, contactInfo, email, meetingSchedule, website, imageUrl, memberCount |
-| `seedBanks` | id, name, locationText, latitude, longitude, description, managedByUserId(FK), seedsAvailable[], email, phone, website |
-| `resourceHubs` | id, type(water/solar/wind/compost), name, latitude, longitude, description, accessRules, contactInfo, createdByUserId(FK) |
-| `events` | id, title, description, hostUserId(FK), hostClubId(FK), type(workshop/meetup/market/tour/webinar), startDateTime, endDateTime, timeZone, locationAddress, latitude, longitude, capacity, registeredCount, imageUrl, price, currency, isFeatured, status |
-| `eventRegistrations` | id, eventId(FK), userId(FK), status(registered/attended/cancelled), registeredAt |
-| `trainingModules` | id, title, category, difficultyLevel, description, content, videoUrl, imageUrl, estimatedDuration, isPremium, order |
-| `userTrainingProgress` | id, userId(FK), moduleId(FK), completed, completedAt, progressPercent, lastAccessedAt |
-| `mealPlans` | id, userId(FK), name, description, dietaryPreference, days, isPublic |
-| `recipes` | id, createdByUserId(FK), dietaryPreference, title, description, ingredients[], instructions, prepTime, cookTime, servings, nutritionSummary, imageUrl, isPublic, tags[] |
-| `shoppingLists` | id, userId(FK), linkedMealPlanId(FK), name, items[] |
-| `chatMessages` | id, senderUserId(FK), recipientUserId(FK), messageType(text/image/file), content, attachmentUrl, isRead, readAt |
-| `reviews` | id, reviewerUserId(FK), subjectType(listing/vendor/user/recipe), subjectId, rating(1-5), title, comment, isVerified |
-| `jobPosts` | id, postedByUserId(FK), vendorId(FK), title, description, jobType(fullTime/partTime/contract/volunteer/internship), locationText, isRemote, salaryMin, salaryMax, salaryCurrency, requirements[], status, expiresAt |
-| `jobApplications` | id, jobId(FK), applicantUserId(FK), coverLetter, resumeUrl, status(pending/reviewed/interviewed/accepted/rejected) |
-| `creditTransactions` | id, userId(FK), type(earned/spent/purchased/refunded/referral_bonus/vendor_commission/recurring_commission), amount, description, relatedEntityType, relatedEntityId |
-| `subscriptionPlans` | id, name, description, price, currency, interval(monthly/yearly), features[], stripePriceId, isActive |
-| `payments` | id, userId(FK), amount, currency, status(pending/completed/failed/refunded), paymentMethod(stripe/credits), stripePaymentIntentId |
-| `notifications` | id, userId(FK), type(message/event/listing/review/system), title, message, link, isRead, readAt |
-| `auditLogs` | id, userId(FK), action(create/update/delete/ban/verify), entityType, entityId, oldValues, newValues, ipAddress, userAgent |
+`users` `memberProfiles` `listings` `vendors` `coupons` `foragingSpots` `gardenClubs` `seedBanks` `resourceHubs` `events` `eventRegistrations` `trainingModules` `userTrainingProgress` `mealPlans` `recipes` `shoppingLists` `chatMessages` `reviews` `jobPosts` `jobApplications` `creditTransactions` `subscriptionPlans` `payments` `notifications` `auditLogs`
 
 ### Infrastructure Tables (6)
+`syncQueue` `deviceRegistry` `conflictLog` `vendorReferrals` `videoCalls` `videoCallParticipants`
 
-| Table | Purpose |
-|-------|---------|
-| `syncQueue` | Offline operation queue — userId, deviceId, tableName, recordId, operation, data, status, retryCount |
-| `deviceRegistry` | Push tokens — userId, deviceId(unique), deviceType(ios/android/web), fcmToken, lastActiveAt |
-| `conflictLog` | Sync conflicts — tableName, recordId, serverData, clientData, resolution(server_wins/client_wins/manual/merged) |
-| `vendorReferrals` | Referral tracking — referrerVendorId, referredVendorId, referralCode(unique), status, totalEarnings, recurringCommissionRate |
-| `videoCalls` | Call sessions — callType(one_on_one/group), hostUserId, channelName(unique), agoraToken, status, startedAt, endedAt, duration |
-| `videoCallParticipants` | Call members — callId(FK), userId(FK), joinedAt, leftAt, isMuted, isVideoOn |
+**Full schema:** `packages/server/src/schema.ts`
 
 **Migrations:**
 ```bash
@@ -370,33 +317,11 @@ app/
 
 ## Mobile Storage Layer
 
-**Location:** `packages/mobile/src/lib/storage/`
-
-| File | Purpose |
-|------|---------|
-| `SQLiteStorage.ts` | Core implementation — Expo SQLite + Drizzle, `eat.db` |
-| `types.ts` | StorageInstance, QueueStats, SyncStatus, FilterOptions, HealthCheckResult |
-| `index.ts` | Exports SQLiteStorage + all types |
-| `SQLiteStorage.example.ts` | Usage examples |
-
-**Key methods:** `getSyncQueue` | `addToSyncQueue` | `updateSyncQueueStatus` | `getRecord` | `upsertRecord` | `deleteRecord` | `getLastSyncedAt` | `setLastSyncedAt` | `getUnresolvedConflicts` | `addConflict`
+`packages/mobile/src/lib/storage/SQLiteStorage.ts` — Expo SQLite + Drizzle, `eat.db`
+Key methods: `getSyncQueue` `addToSyncQueue` `updateSyncQueueStatus` `getRecord` `upsertRecord` `deleteRecord` `getLastSyncedAt` `setLastSyncedAt` `getUnresolvedConflicts` `addConflict`
 
 ---
 
-## Token Saving Strategies
-
-**DO:**
-- Reference files by path instead of showing full content
-- Use parallel tool calls for independent tasks
-- Batch similar operations in one message
-
-**DON'T:**
-- Show entire files when only a snippet changed
-- Repeat instructions already given
-- Explain basic concepts (React, TypeScript, etc.)
-- Generate duplicate code
-
----
 
 ## Development Workflow
 
@@ -423,37 +348,13 @@ npm run server   # Express only
 
 ---
 
-## Common Tasks
+## Common Patterns
 
-**Add API endpoint:**
-1. Define route in `packages/server/src/routes/v1/` (sync/device) or `packages/server/src/routes.ts` (everything else)
-2. Validate with Zod schema
-3. Implement service logic
-4. Add error handling
-5. Test with Postman/Thunder Client
-
-**Add offline sync:**
-1. Add sync metadata to schema table
-2. Queue mutations in `syncQueue` when offline
-3. Handle in `SyncManager.performSync()`
-4. Test offline → online flow
-
-**Add push notification:**
-1. Add device token to `deviceRegistry`
-2. Call `NotificationService.sendToUser()`
-3. Include notification type and data
-4. Test on physical device
-
-**Add video call:**
-1. Create Agora channel with `AgoraService`
-2. Generate token for participants (24h expiry)
-3. Insert record in `videoCalls` table
-4. Join channel in UI with Agora SDK
-
-**Add mobile screen:**
-1. Create file in `packages/mobile/app/` (Expo Router file-based)
-2. Build tab navigation in `app/(tabs)/` first if needed
-3. Connect to API via React Query
+- **New API route:** add to `packages/server/src/routes/` → register in `routes/index.ts` → Zod validate → auth middleware
+- **New mobile screen:** file in `packages/mobile/app/(tabs)/` → register in `_layout.tsx` (visible or `href: null`) → hook in `src/lib/hooks.ts`
+- **Push notification:** `NotificationService.sendToUser()` + FCM token in `deviceRegistry`
+- **Video call:** `AgoraService` token → `videoCalls` table → Agora SDK in UI
+- **Offline sync:** sync metadata on table → queue in `syncQueue` → `SyncManager.performSync()`
 
 ---
 
@@ -540,18 +441,6 @@ Fix: Solution steps
 
 ---
 
-## CLAUDE.md Maintenance Rule
+**Update this file** when: schema changes | new endpoints | features complete | arch decisions | config changes.
 
-**This file MUST be updated when:**
-- New tables added or schema changed
-- New API endpoints added
-- New services or packages created
-- A feature moves from ⏳ Pending → ✅ Complete
-- Architectural decisions are made
-- Port, URL, or config values change
-
-**Update this file before ending any session with significant changes.**
-
----
-
-*~20,000 lines of code across 85+ production files. Optimized for token efficiency — reference, don't repeat.*
+*~20,000 lines of code across 85+ production files.*
