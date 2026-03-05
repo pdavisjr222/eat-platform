@@ -78,7 +78,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Credit Balance + Referral Code — combined card */}
-        <Card>
+        <Card className="bg-card/70 backdrop-blur-sm">
           <CardContent className="p-5">
             <div className="flex flex-col sm:flex-row sm:items-center gap-5">
               {/* Credits */}
@@ -118,7 +118,7 @@ export default function DashboardPage() {
         {/* Accordion sections */}
         <Accordion type="multiple" defaultValue={["events"]} className="space-y-3">
           {/* Upcoming Events */}
-          <AccordionItem value="events" className="border rounded-xl bg-card px-4">
+          <AccordionItem value="events" className="border rounded-xl bg-card/70 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
               <div className="flex items-center gap-2 text-base font-semibold">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -159,7 +159,7 @@ export default function DashboardPage() {
           </AccordionItem>
 
           {/* Nearby Listings */}
-          <AccordionItem value="listings" className="border rounded-xl bg-card px-4">
+          <AccordionItem value="listings" className="border rounded-xl bg-card/70 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
               <div className="flex items-center gap-2 text-base font-semibold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           </AccordionItem>
 
           {/* New Foraging Spots */}
-          <AccordionItem value="spots" className="border rounded-xl bg-card px-4">
+          <AccordionItem value="spots" className="border rounded-xl bg-card/70 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-4">
               <div className="flex items-center gap-2 text-base font-semibold">
                 <MapPin className="h-5 w-5 text-primary" />
