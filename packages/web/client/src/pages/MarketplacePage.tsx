@@ -239,13 +239,13 @@ export default function MarketplacePage() {
                   {/* Content */}
                   <CardContent className="p-4">
                     <h3
-                      className="font-semibold text-sm leading-snug mb-1 line-clamp-1"
+                      className="font-semibold text-base leading-snug mb-1 line-clamp-1"
                       data-testid={`text-listing-title-${listing.id}`}
                     >
                       {listing.title}
                     </h3>
 
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
                       {listing.description}
                     </p>
 
@@ -288,7 +288,7 @@ export default function MarketplacePage() {
                 ? "No listings match your filters"
                 : "No listings yet"}
             </h3>
-            <p className="text-muted-foreground text-sm mb-6 max-w-xs">
+            <p className="text-muted-foreground text-base mb-6 max-w-xs">
               {showMine
                 ? "You haven't created any listings yet."
                 : "Be the first to list something in the community marketplace."}

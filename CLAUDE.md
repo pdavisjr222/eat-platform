@@ -37,7 +37,7 @@ EcologyAgricultureTrade/
 
 ---
 
-## Current Status (Updated: 2026-03-04)
+## Current Status (Updated: 2026-03-05)
 
 ### ✅ Complete
 - Turborepo monorepo + 4 packages wired
@@ -63,6 +63,15 @@ EcologyAgricultureTrade/
 - Mobile: SecureStore token persistence, auth loading state, SQLiteStorage initialized on boot
 - Mobile: API client (src/lib/api.ts) with ApiRequestError, typed authApi endpoints
 - Mobile: sidebar collapses after nav item selection (`setOpenMobile(false)`)
+- Web UI: comprehensive responsive design across all 10 pages (sm: breakpoints, not just md:)
+- Web UI: DashboardPage background image (`/bg-hero.png`) with `bg-background/20` overlay + `backdrop-blur-[1px]`
+- Web UI: DashboardPage — credit balance + referral code merged into single `bg-card/50` card
+- Web UI: DashboardPage — events/listings/spots shown in Accordion (all collapsed on load, `defaultValue={[]}`)
+- Web UI: global `text-wrap: pretty` on body, `text-wrap: balance` on all headings (index.css)
+- Web UI: ThemeToggle — `h-10 w-10 border-2 shadow-sm`, icons `h-6 w-6`
+- Web UI: SidebarTrigger — `h-10 w-10 [&_svg]:h-6 [&_svg]:w-6`
+- Web UI: AppSidebar nav items — `text-lg py-3 h-auto`, icons `h-6 w-6`, `font-semibold`; E.A.T. label `text-2xl`
+- Web UI: GardenClubsPage — "Find a Club Near You" section appears directly below hero
 - Web: typed API client (lib/api.ts), IndexedDB init on App mount, ErrorBoundary in main.tsx
 - Web: auth.ts — Zustand store (`useAuth`) for reactive state + plain `getToken`/`setToken` for non-hook contexts
 - Web: AppSidebar — member-gating via `memberOnly` flag; `emailVerified === true` = member; "Become a Member" prompt for unverified users
@@ -93,6 +102,47 @@ EcologyAgricultureTrade/
 ### 🚫 Not Required for MVP
 - JWT refresh tokens (7-day tokens handled via SecureStore + /api/auth/me on boot)
 - Listing/review counts on profile stats (TODOs marked in profile.tsx)
+
+---
+
+## Web UI Design Standards
+
+### Font Size Scale (always use ≥ these minimums)
+| Element | Class |
+|---------|-------|
+| Page title (h1) | `text-2xl sm:text-3xl md:text-4xl font-serif font-bold` |
+| Section title (h2) | `text-2xl font-serif font-bold` |
+| Card/accordion header | `text-2xl font-bold` |
+| Card item title (h3/h4) | `text-lg font-semibold` |
+| Body / description | `text-base` (never `text-sm` for primary content) |
+| Secondary meta | `text-sm text-foreground/70` |
+| Tiny labels/badges | `text-xs` (only for badges & chip-style tags) |
+
+### Card Transparency Pattern (pages with background image)
+```tsx
+<Card className="bg-card/50 backdrop-blur-sm">
+```
+
+### Background Image Pattern (DashboardPage only)
+```tsx
+<div className="relative min-h-full">
+  <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+    style={{ backgroundImage: "url(/bg-hero.png)" }} />
+  <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px]" />
+  <div className="relative p-4 sm:p-6 space-y-6">
+    {/* page content */}
+  </div>
+</div>
+```
+
+### Responsive Breakpoints
+- Always add `sm:` breakpoint (640px) before `md:` — critical for tablet portrait
+- Grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` (not `md:grid-cols-2`)
+- Padding: `p-4 sm:p-6` (never just `p-6`)
+
+### Global CSS (index.css)
+- `body`: `text-wrap: pretty` (prevents orphan words)
+- `h1–h6`: `text-wrap: balance`
 
 ---
 

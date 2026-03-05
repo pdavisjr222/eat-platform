@@ -153,7 +153,7 @@ export default function LearningPage() {
                       </Badge>
                     </div>
                     <h2 className="text-2xl font-serif font-bold mb-2">{featured.title}</h2>
-                    <p className="text-white/80 text-sm mb-4 line-clamp-2">{featured.description}</p>
+                    <p className="text-white/80 text-base mb-4 line-clamp-2">{featured.description}</p>
                     <div className="flex items-center gap-4 text-sm text-white/70">
                       <span className="capitalize">{featured.difficultyLevel}</span>
                       {featured.estimatedDuration && (
@@ -224,12 +224,12 @@ export default function LearningPage() {
                         {/* Content */}
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1">
+                            <h3 className="font-semibold text-base leading-snug line-clamp-2 flex-1">
                               {module.title}
                             </h3>
                           </div>
 
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {module.description}
                           </p>
 

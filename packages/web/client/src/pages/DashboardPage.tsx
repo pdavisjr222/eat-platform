@@ -69,7 +69,7 @@ export default function DashboardPage() {
                 <Leaf className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-serif font-bold mb-1">Find or Start a Garden Club</h2>
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold mb-1">Find or Start a Garden Club</h2>
                 <p className="text-white/90 text-base">Neighbors growing &amp; sharing food &amp; seed</p>
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
           {/* Upcoming Events */}
           <AccordionItem value="events" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-5">
-              <div className="flex items-center gap-2 text-xl font-bold">
+              <div className="flex items-center gap-2 text-2xl font-bold">
                 <Calendar className="h-5 w-5 text-primary" />
                 Upcoming Events
                 {upcomingEvents && upcomingEvents.length > 0 && (
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/events/${event.id}`)}
                       data-testid={`card-event-${event.id}`}
                     >
-                      <h4 className="font-semibold text-base mb-0.5">{event.title}</h4>
+                      <h4 className="font-semibold text-lg mb-0.5">{event.title}</h4>
                       <p className="text-sm text-foreground/70">
                         {new Date(event.startDateTime).toLocaleDateString()} • {event.type}
                       </p>
@@ -161,7 +161,7 @@ export default function DashboardPage() {
           {/* Nearby Listings */}
           <AccordionItem value="listings" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-5">
-              <div className="flex items-center gap-2 text-xl font-bold">
+              <div className="flex items-center gap-2 text-2xl font-bold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
                 Nearby Listings
                 {nearbyListings && nearbyListings.length > 0 && (
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/marketplace/${listing.id}`)}
                       data-testid={`card-listing-${listing.id}`}
                     >
-                      <h4 className="font-semibold text-base mb-1">{listing.title}</h4>
+                      <h4 className="font-semibold text-lg mb-1">{listing.title}</h4>
                       <div className="flex items-center justify-between text-sm">
                         <Badge variant="secondary" className="text-sm">{listing.type}</Badge>
                         {listing.price && (
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           {/* New Foraging Spots */}
           <AccordionItem value="spots" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
             <AccordionTrigger className="hover:no-underline py-5">
-              <div className="flex items-center gap-2 text-xl font-bold">
+              <div className="flex items-center gap-2 text-2xl font-bold">
                 <MapPin className="h-5 w-5 text-primary" />
                 New Foraging Spots
                 {newForagingSpots && newForagingSpots.length > 0 && (
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                       onClick={() => setLocation(`/foraging-map/${spot.id}`)}
                       data-testid={`card-spot-${spot.id}`}
                     >
-                      <h4 className="font-semibold text-base mb-1">{spot.title}</h4>
+                      <h4 className="font-semibold text-lg mb-1">{spot.title}</h4>
                       <div className="flex items-center gap-2 text-sm text-foreground/70">
                         <span className="capitalize">{spot.plantType}</span>
                         <Badge variant="outline" className="text-sm">{spot.seasonality || "Year-round"}</Badge>
