@@ -69,8 +69,8 @@ export default function DashboardPage() {
                 <Leaf className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base md:text-xl font-serif font-bold mb-1 whitespace-nowrap">Find or Start a Garden Club</h2>
-                <p className="text-white text-xs sm:text-sm whitespace-nowrap">Neighbors growing &amp; sharing food &amp; seed</p>
+                <h2 className="text-xl sm:text-2xl font-serif font-bold mb-1">Find or Start a Garden Club</h2>
+                <p className="text-white/90 text-base">Neighbors growing &amp; sharing food &amp; seed</p>
               </div>
             </div>
             <ArrowRight className="h-6 w-6 text-white/70 flex-shrink-0" />
@@ -119,8 +119,8 @@ export default function DashboardPage() {
         <Accordion type="multiple" defaultValue={[]} className="space-y-3">
           {/* Upcoming Events */}
           <AccordionItem value="events" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-lg font-bold">
+            <AccordionTrigger className="hover:no-underline py-5">
+              <div className="flex items-center gap-2 text-xl font-bold">
                 <Calendar className="h-5 w-5 text-primary" />
                 Upcoming Events
                 {upcomingEvents && upcomingEvents.length > 0 && (
@@ -160,8 +160,8 @@ export default function DashboardPage() {
 
           {/* Nearby Listings */}
           <AccordionItem value="listings" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-lg font-bold">
+            <AccordionTrigger className="hover:no-underline py-5">
+              <div className="flex items-center gap-2 text-xl font-bold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
                 Nearby Listings
                 {nearbyListings && nearbyListings.length > 0 && (
@@ -204,8 +204,8 @@ export default function DashboardPage() {
 
           {/* New Foraging Spots */}
           <AccordionItem value="spots" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2 text-lg font-bold">
+            <AccordionTrigger className="hover:no-underline py-5">
+              <div className="flex items-center gap-2 text-xl font-bold">
                 <MapPin className="h-5 w-5 text-primary" />
                 New Foraging Spots
                 {newForagingSpots && newForagingSpots.length > 0 && (
