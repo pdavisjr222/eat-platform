@@ -105,6 +105,7 @@ export {
   type VideoCall,
   type InsertVideoCallParticipant,
   type VideoCallParticipant,
+  type VendorMediaItem,
 } from "@eat/shared/schema";
 
 const generateId = () => crypto.randomUUID();
@@ -225,6 +226,7 @@ export const vendors = pgTable("vendors", {
   verifiedBy: text("verified_by"),
   rating: doublePrecision("rating").default(0),
   reviewCount: integer("review_count").default(0),
+  mediaItems: jsonb("media_items").$type<VendorMediaItem[]>(),
   createdAt: timestamp("created_at").notNull().$defaultFn(() => new Date()),
   updatedAt: timestamp("updated_at").notNull().$defaultFn(() => new Date()),
   version: integer("version").notNull().default(1),

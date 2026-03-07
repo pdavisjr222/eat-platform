@@ -5,7 +5,7 @@ import { config } from "./config";
 import type { Request } from "express";
 
 // Ensure upload directories exist
-const uploadDirs = ["images", "profiles", "listings", "events", "foraging", "documents"];
+const uploadDirs = ["images", "profiles", "listings", "events", "foraging", "documents", "vendors"];
 
 for (const dir of uploadDirs) {
   const fullPath = path.join(config.uploadDir, dir);
@@ -118,6 +118,30 @@ export const uploadImage = multer({
   limits: { fileSize: config.maxFileSize },
   fileFilter: imageFilter,
 }).single("image");
+
+// Vendor media upload — images, video, audio
+const vendorMediaFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  callback: multer.FileFilterCallback
+) => {
+  const allowed = [
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "video/mp4", "video/webm", "video/quicktime", "video/x-msvideo",
+    "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/mp4", "audio/aac", "audio/x-m4a",
+  ];
+  if (allowed.includes(file.mimetype)) {
+    callback(null, true);
+  } else {
+    callback(new Error("Only images (JPEG/PNG/GIF/WebP), video (MP4/WebM/MOV/AVI), and audio (MP3/WAV/OGG/AAC/M4A) are allowed"));
+  }
+};
+
+export const uploadVendorMedia = multer({
+  storage: createStorage("vendors"),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB (video)
+  fileFilter: vendorMediaFilter,
+}).single("media");
 
 // Get file URL from filename
 export function getFileUrl(filename: string, subdir: string): string {

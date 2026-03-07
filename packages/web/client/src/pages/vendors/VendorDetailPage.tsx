@@ -23,6 +23,9 @@ import {
   ExternalLink,
   Pencil,
   MessageSquare,
+  ImageIcon,
+  Music,
+  Video,
 } from "lucide-react";
 
 const vendorTypeLabels: Record<string, string> = {
@@ -221,6 +224,55 @@ export default function VendorDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Media gallery */}
+      {vendor.mediaItems && vendor.mediaItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              Media
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {vendor.mediaItems.map((item: any, i: number) => (
+                <div key={i} className="rounded-lg overflow-hidden border bg-muted/20">
+                  {item.type === "image" && (
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={item.url}
+                        alt={item.caption || `Media ${i + 1}`}
+                        className="w-full aspect-video object-cover hover:opacity-90 transition-opacity"
+                        loading="lazy"
+                      />
+                    </a>
+                  )}
+                  {item.type === "video" && (
+                    <video
+                      src={item.url}
+                      controls
+                      className="w-full aspect-video bg-black"
+                      preload="metadata"
+                    />
+                  )}
+                  {item.type === "audio" && (
+                    <div className="p-4 flex flex-col items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Music className="h-6 w-6 text-primary" />
+                      </div>
+                      <audio src={item.url} controls className="w-full" preload="metadata" />
+                    </div>
+                  )}
+                  {item.caption && (
+                    <p className="text-xs text-muted-foreground px-3 py-2 truncate">{item.caption}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column — contact + location */}

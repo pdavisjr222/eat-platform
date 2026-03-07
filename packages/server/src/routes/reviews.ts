@@ -67,6 +67,42 @@ router.get("/api/reviews/:subjectType/:subjectId", authenticateToken, checkUserS
   }
 });
 
+// Reviews received by the logged-in user (subjectType=user, subjectId=current user)
+router.get("/api/reviews/received", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
+  try {
+    const { page, limit, offset } = getPaginationParams(req);
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(reviews)
+      .where(and(eq(reviews.subjectType, "user"), eq(reviews.subjectId, req.userId!)));
+
+    const reviewsList = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.subjectType, "user"), eq(reviews.subjectId, req.userId!)))
+      .orderBy(desc(reviews.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const reviewsWithReviewers = await Promise.all(
+      reviewsList.map(async (review) => {
+        const [reviewer] = await db
+          .select({ id: users.id, name: users.name, profileImageUrl: users.profileImageUrl })
+          .from(users)
+          .where(eq(users.id, review.reviewerUserId))
+          .limit(1);
+        return { ...review, reviewer };
+      })
+    );
+
+    res.json(buildPaginatedResponse(reviewsWithReviewers, totalResult.count, { page, limit, offset }));
+  } catch (error: any) {
+    console.error("Error fetching received reviews:", error);
+    res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
 router.post(
   "/api/reviews",
   authenticateToken,

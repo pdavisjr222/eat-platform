@@ -229,7 +229,7 @@ export default function EditProfilePage() {
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                      {user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      {user?.name ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "?"}
                     </AvatarFallback>
                   </Avatar>
                   {compressing && (

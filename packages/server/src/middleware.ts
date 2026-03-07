@@ -9,10 +9,28 @@ import { eq } from "drizzle-orm";
 import { verifyToken, type AuthRequest } from "./auth";
 
 // CORS configuration
+const allowedOrigins = new Set(
+  [config.domain, config.webUrl].filter(Boolean)
+);
+
 export const corsMiddleware = cors({
-  origin: config.nodeEnv === "production"
-    ? [config.domain, config.appUrl, config.webUrl].filter(Boolean)
-    : true, // Allow all origins in development
+  origin: (origin, callback) => {
+    // Allow non-browser requests (mobile app, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (config.nodeEnv !== "production") return callback(null, true);
+
+    // Exact match against configured domains
+    if (allowedOrigins.has(origin)) return callback(null, true);
+
+    // Allow any Vercel preview deployment for this project
+    if (/^https:\/\/eat-platform-web[^.]*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`CORS blocked: ${origin}`);
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

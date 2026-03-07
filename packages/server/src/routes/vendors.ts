@@ -12,8 +12,9 @@ import {
   getPaginationParams,
   buildPaginatedResponse,
 } from "../middleware";
-import { vendors, coupons } from "../schema";
+import { vendors, coupons, type VendorMediaItem } from "../schema";
 import { eq, and, desc, count } from "drizzle-orm";
+import { uploadVendorMedia, getFileUrl, deleteFile } from "../upload";
 
 const router = Router();
 
@@ -172,6 +173,107 @@ router.put(
     } catch (error: any) {
       console.error("Error updating vendor:", error);
       res.status(500).json({ error: "Failed to update vendor" });
+    }
+  }
+);
+
+// Upload media (images, video, audio) to a vendor profile
+router.post(
+  "/api/vendors/:id/media",
+  authenticateToken,
+  checkUserStatus,
+  requireEmailVerified,
+  (req: AuthRequest, res, next) => {
+    uploadVendorMedia(req as any, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      next();
+    });
+  },
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const file = (req as any).file as Express.Multer.File | undefined;
+
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id)).limit(1);
+      if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+      if (vendor.linkedUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this vendor" });
+      }
+
+      // Per-type size limits
+      const isImage = file.mimetype.startsWith("image/");
+      const isAudio = file.mimetype.startsWith("audio/");
+      if (isImage && file.size > 10 * 1024 * 1024) {
+        await deleteFile(getFileUrl(file.filename, "vendors"));
+        return res.status(400).json({ error: "Images must be under 10MB" });
+      }
+      if (isAudio && file.size > 20 * 1024 * 1024) {
+        await deleteFile(getFileUrl(file.filename, "vendors"));
+        return res.status(400).json({ error: "Audio files must be under 20MB" });
+      }
+
+      const mediaType: VendorMediaItem["type"] = isImage ? "image" : isAudio ? "audio" : "video";
+      const { caption } = req.body as { caption?: string };
+
+      const newItem: VendorMediaItem = {
+        url: getFileUrl(file.filename, "vendors"),
+        type: mediaType,
+        filename: file.filename,
+        caption: caption || undefined,
+      };
+
+      const existing = vendor.mediaItems ?? [];
+      const [updated] = await db
+        .update(vendors)
+        .set({ mediaItems: [...existing, newItem], updatedAt: new Date() })
+        .where(eq(vendors.id, id))
+        .returning();
+
+      res.status(201).json({ item: newItem, vendor: updated });
+    } catch (error: any) {
+      console.error("Error uploading vendor media:", error);
+      res.status(500).json({ error: "Failed to upload media" });
+    }
+  }
+);
+
+// Delete a media item from a vendor profile
+router.delete(
+  "/api/vendors/:id/media",
+  authenticateToken,
+  checkUserStatus,
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { filename } = req.body as { filename: string };
+
+      if (!filename) return res.status(400).json({ error: "filename is required" });
+
+      const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id)).limit(1);
+      if (!vendor) return res.status(404).json({ error: "Vendor not found" });
+      if (vendor.linkedUserId !== req.userId) {
+        return res.status(403).json({ error: "Not authorized to edit this vendor" });
+      }
+
+      const existing = vendor.mediaItems ?? [];
+      const item = existing.find((m) => m.filename === filename);
+      if (!item) return res.status(404).json({ error: "Media item not found" });
+
+      await deleteFile(item.url);
+      const filtered = existing.filter((m) => m.filename !== filename);
+      await db
+        .update(vendors)
+        .set({ mediaItems: filtered, updatedAt: new Date() })
+        .where(eq(vendors.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting vendor media:", error);
+      res.status(500).json({ error: "Failed to delete media" });
     }
   }
 );

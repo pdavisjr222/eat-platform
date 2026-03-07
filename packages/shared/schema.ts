@@ -7,6 +7,14 @@ import { relations } from "drizzle-orm";
 // Helper to generate UUID
 const generateId = () => crypto.randomUUID();
 
+// Vendor media item type
+export type VendorMediaItem = {
+  url: string;
+  type: "image" | "video" | "audio";
+  filename: string;
+  caption?: string;
+};
+
 // Users table - core authentication and user data
 export const users = sqliteTable("users", {
   id: text("id").primaryKey().$defaultFn(generateId),
@@ -123,6 +131,7 @@ export const vendors = sqliteTable("vendors", {
   verifiedBy: text("verified_by"),
   rating: real("rating").default(0),
   reviewCount: integer("review_count").default(0),
+  mediaItems: text("media_items", { mode: "json" }).$type<VendorMediaItem[]>(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   // Sync metadata
