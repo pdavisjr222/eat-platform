@@ -55,8 +55,8 @@ export default function GardenClubsPage() {
       setShowCreate(false);
       setForm(emptyForm);
     },
-    onError: () => {
-      toast({ title: "Failed to create club", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to create club", description: error.message || "Please try again.", variant: "destructive" });
     },
   });
 

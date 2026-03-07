@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Send, Plus, Search, MessageSquare, ArrowLeft } from "lucide-react";
+import { Send, Plus, Search, MessageSquare, ArrowLeft, Users, Trash2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -54,6 +55,17 @@ type Member = {
   country: string | null;
 };
 
+type CommunityPost = {
+  id: string;
+  content: string;
+  createdAt: string;
+  authorUserId: string;
+  authorName: string;
+  authorProfileImageUrl: string | null;
+  authorCity: string | null;
+  authorCountry: string | null;
+};
+
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
@@ -90,8 +102,11 @@ export default function MessagesPage() {
   const [convSearch, setConvSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [newMsgOpen, setNewMsgOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("direct");
+  const [postText, setPostText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const postInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Parse ?user= param for direct links from member profiles
   const targetUserId = new URLSearchParams(search).get("user");
@@ -226,10 +241,164 @@ export default function MessagesPage() {
     }
   });
 
+  // Community posts — poll every 15s
+  const { data: communityPosts = [], isLoading: postsLoading } = useQuery<CommunityPost[]>({
+    queryKey: ["/api/community-posts"],
+    refetchInterval: 15000,
+    enabled: activeTab === "community",
+  });
+
+  const createPostMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const res = await apiRequest("POST", "/api/community-posts", { content });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community-posts"] });
+      setPostText("");
+      postInputRef.current?.focus();
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await apiRequest("DELETE", `/api/community-posts/${postId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/community-posts"] });
+    },
+  });
+
+  const handlePostSubmit = () => {
+    if (!postText.trim() || createPostMutation.isPending) return;
+    createPostMutation.mutate(postText.trim());
+  };
+
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
   return (
-    <div className="flex h-[calc(100vh-73px)]">
+    <div className="flex flex-col h-[calc(100vh-73px)]">
+      {/* Tab switcher */}
+      <div className="border-b bg-background px-4 pt-3 pb-0 flex-shrink-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="h-9">
+            <TabsTrigger value="direct" className="gap-1.5 text-sm">
+              <MessageSquare className="h-4 w-4" />
+              Direct
+              {totalUnread > 0 && (
+                <span className="ml-1 h-4 min-w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                  {totalUnread > 9 ? "9+" : totalUnread}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="community" className="gap-1.5 text-sm">
+              <Users className="h-4 w-4" />
+              Community Board
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {activeTab === "community" ? (
+        /* ── Community Board ── */
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Post input */}
+          <div className="p-4 border-b bg-background flex-shrink-0">
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={postInputRef}
+                placeholder="Post a message to the whole community..."
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePostSubmit();
+                  }
+                }}
+                rows={2}
+                disabled={createPostMutation.isPending}
+                className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                data-testid="input-community-post"
+              />
+              <Button
+                onClick={handlePostSubmit}
+                disabled={!postText.trim() || createPostMutation.isPending}
+                size="icon"
+                data-testid="button-post-community"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Posts feed */}
+          <ScrollArea className="flex-1 px-4 py-4">
+            {postsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-16 w-full rounded-xl" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : communityPosts.length > 0 ? (
+              <div className="space-y-4">
+                {communityPosts.map((post) => {
+                  const isOwn = post.authorUserId === (user as any)?.id;
+                  return (
+                    <div key={post.id} className="flex gap-3 group">
+                      <Avatar className="h-9 w-9 flex-shrink-0 mt-0.5">
+                        <AvatarImage src={post.authorProfileImageUrl ?? undefined} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {getInitials(post.authorName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold">{post.authorName}</span>
+                            {(post.authorCity || post.authorCountry) && (
+                              <span className="text-xs text-muted-foreground">
+                                {[post.authorCity, post.authorCountry].filter(Boolean).join(", ")}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">{relativeTime(post.createdAt)}</span>
+                          </div>
+                          {isOwn && (
+                            <button
+                              onClick={() => deletePostMutation.mutate(post.id)}
+                              disabled={deletePostMutation.isPending}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1 rounded"
+                              title="Delete post"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap break-words">{post.content}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Users className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">No community posts yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Be the first to post a message for everyone!</p>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      ) : (
+      /* ── Direct Messages ── */
+      <div className="flex flex-1 min-h-0">
       {/* Sidebar — conversation list */}
       <div
         className={`flex flex-col border-r bg-background w-full lg:w-80 flex-shrink-0 ${
@@ -566,6 +735,8 @@ export default function MessagesPage() {
           </div>
         )}
       </div>
+      </div>
+      )}
     </div>
   );
 }

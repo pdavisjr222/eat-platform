@@ -25,6 +25,7 @@ import subscriptionsRouter from "./subscriptions";
 import adminRouter from "./admin";
 import miscRouter from "./misc";
 import gardenClubsRouter from "./gardenClubs";
+import communityPostsRouter from "./communityPosts";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply global middleware
@@ -58,6 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(subscriptionsRouter);
   app.use(adminRouter);
   app.use(gardenClubsRouter);
+  app.use(communityPostsRouter);
 
   // Import and register sync routes
   const syncRoutes = (await import("./v1/sync")).default;

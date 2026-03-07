@@ -438,6 +438,16 @@ export const chatMessages = sqliteTable("chat_messages", {
   deletedAt: integer("deleted_at", { mode: "timestamp" }),
 });
 
+// Community Posts
+export const communityPosts = sqliteTable("community_posts", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  authorUserId: text("author_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  isDeleted: integer("is_deleted", { mode: "boolean" }).notNull().default(false),
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
+});
+
 // Reviews
 export const reviews = sqliteTable("reviews", {
   id: text("id").primaryKey().$defaultFn(generateId),

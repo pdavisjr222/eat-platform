@@ -540,6 +540,17 @@ export const chatMessages = pgTable("chat_messages", {
   deletedAt: timestamp("deleted_at"),
 });
 
+// ============ COMMUNITY POSTS ============
+
+export const communityPosts = pgTable("community_posts", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  authorUserId: text("author_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().$defaultFn(() => new Date()),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
+});
+
 // ============ REVIEWS ============
 
 export const reviews = pgTable("reviews", {
@@ -902,6 +913,10 @@ export const shoppingListsRelations = relations(shoppingLists, ({ one }) => ({
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   sender: one(users, { fields: [chatMessages.senderUserId], references: [users.id], relationName: "sender" }),
   recipient: one(users, { fields: [chatMessages.recipientUserId], references: [users.id], relationName: "recipient" }),
+}));
+
+export const communityPostsRelations = relations(communityPosts, ({ one }) => ({
+  author: one(users, { fields: [communityPosts.authorUserId], references: [users.id] }),
 }));
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({

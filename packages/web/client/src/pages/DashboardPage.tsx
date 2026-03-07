@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, MapPin, ShoppingBag, Copy, Check, Leaf, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, ShoppingBag, Copy, Check, Leaf, ArrowRight, Eye } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Event, Listing, ForagingSpot } from "@shared/schema";
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [copiedCode, setCopiedCode] = useState(false);
+  const [referralRevealed, setReferralRevealed] = useState(false);
 
   const { data: upcomingEvents, isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events/upcoming"],
@@ -95,18 +96,38 @@ export default function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-base font-semibold text-foreground mb-2">Your Referral Code</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 min-w-0 px-3 py-2 bg-muted rounded-md text-base font-mono font-semibold truncate">
+                  <code
+                    className={`flex-1 min-w-0 px-3 py-2 bg-muted rounded-md text-base font-mono font-semibold truncate cursor-pointer select-none transition-all ${
+                      referralRevealed ? "" : "blur-sm"
+                    }`}
+                    onClick={() => setReferralRevealed(true)}
+                    title={referralRevealed ? undefined : "Click to reveal"}
+                  >
                     {user?.referralCode || "Generating..."}
                   </code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyReferralCode}
-                    data-testid="button-copy-referral"
-                  >
-                    {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
+                  {referralRevealed ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={copyReferralCode}
+                      data-testid="button-copy-referral"
+                    >
+                      {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setReferralRevealed(true)}
+                      title="Reveal code"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
+                {!referralRevealed && (
+                  <p className="text-xs text-muted-foreground mt-0.5">Click to reveal your code</p>
+                )}
                 <p className="text-sm text-foreground/70 mt-1">
                   Share to earn credits when friends join
                 </p>
