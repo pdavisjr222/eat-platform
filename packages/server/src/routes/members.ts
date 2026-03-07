@@ -123,6 +123,7 @@ router.put("/api/profile", authenticateToken, checkUserStatus, async (req: AuthR
       interests,
       skills,
       offerings,
+      profileImageUrl,
     } = req.body;
 
     const [updatedUser] = await db
@@ -137,6 +138,7 @@ router.put("/api/profile", authenticateToken, checkUserStatus, async (req: AuthR
         interests,
         skills,
         offerings,
+        ...(profileImageUrl !== undefined ? { profileImageUrl } : {}),
         updatedAt: new Date(),
       })
       .where(eq(users.id, req.userId!))

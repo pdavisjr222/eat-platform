@@ -139,8 +139,8 @@ export default function DashboardPage() {
         {/* Accordion sections */}
         <Accordion type="multiple" defaultValue={[]} className="space-y-3">
           {/* Upcoming Events */}
-          <AccordionItem value="events" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-5">
+          <AccordionItem value="events" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4 w-fit">
+            <AccordionTrigger className="hover:no-underline py-5 flex-none gap-3">
               <div className="flex items-center gap-2 text-2xl font-bold">
                 <Calendar className="h-5 w-5 text-primary" />
                 Upcoming Events
@@ -180,8 +180,8 @@ export default function DashboardPage() {
           </AccordionItem>
 
           {/* Nearby Listings */}
-          <AccordionItem value="listings" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-5">
+          <AccordionItem value="listings" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4 w-fit">
+            <AccordionTrigger className="hover:no-underline py-5 flex-none gap-3">
               <div className="flex items-center gap-2 text-2xl font-bold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
                 Nearby Listings
@@ -224,8 +224,8 @@ export default function DashboardPage() {
           </AccordionItem>
 
           {/* New Foraging Spots */}
-          <AccordionItem value="spots" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4">
-            <AccordionTrigger className="hover:no-underline py-5">
+          <AccordionItem value="spots" className="border rounded-xl bg-card/50 backdrop-blur-sm px-4 w-fit">
+            <AccordionTrigger className="hover:no-underline py-5 flex-none gap-3">
               <div className="flex items-center gap-2 text-2xl font-bold">
                 <MapPin className="h-5 w-5 text-primary" />
                 New Foraging Spots

@@ -29,8 +29,32 @@ const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:5000").repla
 
 function resolveImageUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
-  if (url.startsWith("http")) return url;
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
   return `${API_BASE}${url}`;
+}
+
+async function compressImage(file: File, maxPx = 400): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+    const img = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      let { width, height } = img;
+      if (width > height) {
+        if (width > maxPx) { height = Math.round((height * maxPx) / width); width = maxPx; }
+      } else {
+        if (height > maxPx) { width = Math.round((width * maxPx) / height); height = maxPx; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => reject(new Error("Image load failed"));
+    img.src = objUrl;
+  });
 }
 
 const profileSchema = z.object({
@@ -116,7 +140,8 @@ export default function EditProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
     resolveImageUrl((user as any)?.profileImageUrl)
   );
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [pendingImageBase64, setPendingImageBase64] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -132,26 +157,15 @@ export default function EditProfilePage() {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingPhoto(true);
+    setCompressing(true);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch(`${API_BASE}/api/profile/image`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-      const full = resolveImageUrl(data.imageUrl);
-      setAvatarUrl(full);
-      // Update auth store so ProfilePage immediately reflects the new image
-      if (user && token) setAuth({ ...(user as any), profileImageUrl: data.imageUrl }, token);
-      toast({ title: "Photo updated!" });
+      const base64 = await compressImage(file);
+      setPendingImageBase64(base64);
+      setAvatarUrl(base64);
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({ title: "Failed to process image", description: err.message, variant: "destructive" });
     } finally {
-      setUploadingPhoto(false);
+      setCompressing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -167,6 +181,7 @@ export default function EditProfilePage() {
         interests,
         skills,
         offerings,
+        ...(pendingImageBase64 ? { profileImageUrl: pendingImageBase64 } : {}),
       });
       return res.json();
     },
@@ -217,7 +232,7 @@ export default function EditProfilePage() {
                       {user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  {uploadingPhoto && (
+                  {compressing && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
                       <Loader2 className="h-5 w-5 text-white animate-spin" />
                     </div>
@@ -229,10 +244,10 @@ export default function EditProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingPhoto}
+                    disabled={compressing}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                    {compressing ? "Processing..." : "Change Photo"}
                   </Button>
                   <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 10MB</p>
                   <input
