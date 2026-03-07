@@ -8,6 +8,7 @@ import { MapPin, Mail, Calendar, Award, Users, ShoppingBag, MessageSquare, LogOu
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Listing, Review } from "@shared/schema";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function ProfilePage() {
   const { user, clearAuth } = useAuth();
@@ -63,7 +64,7 @@ export default function ProfilePage() {
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center">
                 <Avatar className="h-32 w-32 mb-4">
-                  <AvatarImage src={user.profileImageUrl || undefined} alt={user.name} />
+                  <AvatarImage src={resolveImageUrl(user.profileImageUrl) || undefined} alt={user.name} />
                   <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
                     {getInitials(user.name)}
                   </AvatarFallback>

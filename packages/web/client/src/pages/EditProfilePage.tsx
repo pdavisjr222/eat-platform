@@ -145,6 +145,8 @@ export default function EditProfilePage() {
       if (!res.ok) throw new Error(data.error || "Upload failed");
       const full = resolveImageUrl(data.imageUrl);
       setAvatarUrl(full);
+      // Update auth store so ProfilePage immediately reflects the new image
+      if (user && token) setAuth({ ...(user as any), profileImageUrl: data.imageUrl }, token);
       toast({ title: "Photo updated!" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
@@ -168,8 +170,8 @@ export default function EditProfilePage() {
       });
       return res.json();
     },
-    onSuccess: (updatedUser: any) => {
-      if (token) setAuth(updatedUser, token);
+    onSuccess: (data: any) => {
+      if (token) setAuth(data.user ?? data, token);
       toast({ title: "Profile updated!", description: "Your changes have been saved." });
       setLocation("/profile");
     },
