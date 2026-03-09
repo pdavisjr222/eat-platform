@@ -60,7 +60,7 @@ export default function DashboardPage() {
 
         {/* Garden Club CTA */}
         <div
-          className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-green-700 to-emerald-500 p-6 text-white cursor-pointer hover:opacity-95 transition-opacity"
+          className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-green-700 to-emerald-500 p-6 text-white cursor-pointer hover:opacity-95 transition-opacity w-fit"
           onClick={() => setLocation("/garden-clubs")}
         >
           <div className="absolute right-6 top-1/2 -translate-y-1/2 text-6xl opacity-20 select-none">🌿</div>
