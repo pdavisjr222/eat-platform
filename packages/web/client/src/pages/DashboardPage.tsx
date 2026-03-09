@@ -79,21 +79,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Credit Balance + Referral Code — combined card */}
-        <Card className="bg-card/50 backdrop-blur-sm">
+        <Card className="bg-card/50 backdrop-blur-sm w-fit">
           <CardContent className="p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center">
               {/* Credits */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 pb-5 sm:pb-0 sm:pr-5">
                 <p className="text-base font-semibold text-foreground mb-1">Credit Balance</p>
                 <div className="text-4xl font-bold text-primary">{user?.creditBalance || 0}</div>
                 <p className="text-sm text-foreground/70 mt-1">Available for rewards</p>
               </div>
 
-              <div className="hidden sm:block w-px self-stretch bg-border" />
-              <div className="sm:hidden h-px w-full bg-border" />
-
               {/* Referral code */}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 pt-5 sm:pt-0 sm:pl-5 border-t sm:border-t-0 sm:border-l border-border">
                 <p className="text-base font-semibold text-foreground mb-2">Your Referral Code</p>
                 <div className="flex items-center gap-2">
                   <code
