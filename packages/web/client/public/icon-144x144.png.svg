@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#22c55e"/>
-  <g transform="translate(72, 72)">
-    <path d="M 0,-50 Q 27,-13 20,14 Q 14,36 -6,50 Q -27,36 -20,6 Q -14,-22 0,-50 Z" fill="#ffffff" stroke="#f0f0f0" stroke-width="1"/>
-    <line x1="0" y1="-50" x2="0" y2="50" stroke="#e0e0e0" stroke-width="2"/>
-  </g>
-</svg>

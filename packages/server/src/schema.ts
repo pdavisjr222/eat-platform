@@ -105,8 +105,14 @@ export {
   type VideoCall,
   type InsertVideoCallParticipant,
   type VideoCallParticipant,
-  type VendorMediaItem,
 } from "@eat/shared/schema";
+
+export type VendorMediaItem = {
+  url: string;
+  type: "image" | "video" | "audio";
+  filename: string;
+  caption?: string;
+};
 
 const generateId = () => crypto.randomUUID();
 
