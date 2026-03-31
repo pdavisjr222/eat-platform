@@ -118,8 +118,10 @@ export default function VendorDetailPage() {
     },
   });
 
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  const getInitials = (name: string) => {
+    if (!name) return "?";
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  };
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

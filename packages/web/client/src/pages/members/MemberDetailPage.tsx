@@ -117,8 +117,10 @@ export default function MemberDetailPage() {
     },
   });
 
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  const getInitials = (name: string) => {
+    if (!name) return "?";
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  };
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -232,7 +234,7 @@ export default function MemberDetailPage() {
       {hasTagContent && (
         <Card>
           <CardHeader>
-            <CardTitle>About {member.name.split(" ")[0]}</CardTitle>
+            <CardTitle>About {(member.name || "Unknown").split(" ")[0]}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <TagGroup icon={Sprout} label="Interests" items={member.interests} />
