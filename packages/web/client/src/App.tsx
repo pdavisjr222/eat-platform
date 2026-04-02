@@ -1,5 +1,5 @@
 import { Switch, Route } from "wouter";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { queryClient, apiRequest } from "./lib/queryClient";
 import { QueryClientProvider, useMutation } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,8 +11,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AuthGuard } from "@/components/AuthGuard";
 import { initStorage } from "@/lib/storage/init";
 import { useAuth } from "@/lib/auth";
-import { Mail, X } from "lucide-react";
-import NotFound from "@/pages/not-found";
+import { Mail, X, Loader2 } from "lucide-react";
+
+// Auth pages — eager (small, needed immediately)
 import LoginPage from "@/pages/auth/LoginPage";
 import SignupPage from "@/pages/auth/SignupPage";
 import VerifyEmailPage from "@/pages/auth/VerifyEmailPage";
@@ -20,34 +21,45 @@ import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import TermsOfServicePage from "@/pages/legal/TermsOfServicePage";
 import PrivacyPolicyPage from "@/pages/legal/PrivacyPolicyPage";
-import DashboardPage from "@/pages/DashboardPage";
-import MarketplacePage from "@/pages/MarketplacePage";
-import CreateListingPage from "@/pages/marketplace/CreateListingPage";
-import EditListingPage from "@/pages/marketplace/EditListingPage";
-import ListingDetailPage from "@/pages/marketplace/ListingDetailPage";
-import ForagingMapPage from "@/pages/ForagingMapPage";
-import VendorsPage from "@/pages/VendorsPage";
-import MembersPage from "@/pages/MembersPage";
-import EventsPage from "@/pages/EventsPage";
-import CreateEventPage from "@/pages/events/CreateEventPage";
-import EditEventPage from "@/pages/events/EditEventPage";
-import CreateForagingSpotPage from "@/pages/foraging/CreateForagingSpotPage";
-import EditForagingSpotPage from "@/pages/foraging/EditForagingSpotPage";
-import ForagingSpotDetailPage from "@/pages/foraging/ForagingSpotDetailPage";
-import MemberDetailPage from "@/pages/members/MemberDetailPage";
-import EventDetailPage from "@/pages/events/EventDetailPage";
-import CreateVendorPage from "@/pages/vendors/CreateVendorPage";
-import EditVendorPage from "@/pages/vendors/EditVendorPage";
-import VendorDetailPage from "@/pages/vendors/VendorDetailPage";
-import LearningPage from "@/pages/LearningPage";
-import JobBoardPage from "@/pages/JobBoardPage";
-import CreateJobPage from "@/pages/jobs/CreateJobPage";
-import EditJobPage from "@/pages/jobs/EditJobPage";
-import JobDetailPage from "@/pages/jobs/JobDetailPage";
-import MessagesPage from "@/pages/MessagesPage";
-import ProfilePage from "@/pages/ProfilePage";
-import EditProfilePage from "@/pages/EditProfilePage";
-import GardenClubsPage from "@/pages/GardenClubsPage";
+import NotFound from "@/pages/not-found";
+
+// Authenticated pages — lazy loaded for code splitting
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const MarketplacePage = lazy(() => import("@/pages/MarketplacePage"));
+const CreateListingPage = lazy(() => import("@/pages/marketplace/CreateListingPage"));
+const EditListingPage = lazy(() => import("@/pages/marketplace/EditListingPage"));
+const ListingDetailPage = lazy(() => import("@/pages/marketplace/ListingDetailPage"));
+const ForagingMapPage = lazy(() => import("@/pages/ForagingMapPage"));
+const CreateForagingSpotPage = lazy(() => import("@/pages/foraging/CreateForagingSpotPage"));
+const EditForagingSpotPage = lazy(() => import("@/pages/foraging/EditForagingSpotPage"));
+const ForagingSpotDetailPage = lazy(() => import("@/pages/foraging/ForagingSpotDetailPage"));
+const VendorsPage = lazy(() => import("@/pages/VendorsPage"));
+const CreateVendorPage = lazy(() => import("@/pages/vendors/CreateVendorPage"));
+const EditVendorPage = lazy(() => import("@/pages/vendors/EditVendorPage"));
+const VendorDetailPage = lazy(() => import("@/pages/vendors/VendorDetailPage"));
+const MembersPage = lazy(() => import("@/pages/MembersPage"));
+const MemberDetailPage = lazy(() => import("@/pages/members/MemberDetailPage"));
+const EventsPage = lazy(() => import("@/pages/EventsPage"));
+const CreateEventPage = lazy(() => import("@/pages/events/CreateEventPage"));
+const EditEventPage = lazy(() => import("@/pages/events/EditEventPage"));
+const EventDetailPage = lazy(() => import("@/pages/events/EventDetailPage"));
+const LearningPage = lazy(() => import("@/pages/LearningPage"));
+const JobBoardPage = lazy(() => import("@/pages/JobBoardPage"));
+const CreateJobPage = lazy(() => import("@/pages/jobs/CreateJobPage"));
+const EditJobPage = lazy(() => import("@/pages/jobs/EditJobPage"));
+const JobDetailPage = lazy(() => import("@/pages/jobs/JobDetailPage"));
+const MessagesPage = lazy(() => import("@/pages/MessagesPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const EditProfilePage = lazy(() => import("@/pages/EditProfilePage"));
+const GardenClubsPage = lazy(() => import("@/pages/GardenClubsPage"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { user, setAuth, token } = useAuth();
@@ -107,7 +119,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
           <main className="flex-1 overflow-auto">
-            {children}
+            <Suspense fallback={<PageLoader />}>
+              {children}
+            </Suspense>
           </main>
         </div>
       </div>

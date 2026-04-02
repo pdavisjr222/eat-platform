@@ -5,14 +5,16 @@ import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
 import * as pgSchema from "./schema";
 import * as sqliteSchema from "@eat/shared/schema";
 
+// Block SQLite in production — must use PostgreSQL
+if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
+  console.error("FATAL: DATABASE_URL is required in production. SQLite is not supported.");
+  process.exit(1);
+}
+
 /**
  * Database connection — auto-selects adapter:
- *   DATABASE_URL set  → Neon serverless PostgreSQL (Railway production)
- *   DATABASE_URL unset → better-sqlite3 (local development)
- *
- * Typed as NeonHttpDatabase<pgSchema> so all 68 server routes get full
- * TypeScript validation against the production schema. The SQLite branch is
- * dev-only and cast to match — Railway always sets DATABASE_URL in prod.
+ *   DATABASE_URL set  → Neon serverless PostgreSQL (production)
+ *   DATABASE_URL unset → better-sqlite3 (local development only)
  */
 export const db: NeonHttpDatabase<typeof pgSchema> = process.env.DATABASE_URL
   ? drizzleNeon(neon(process.env.DATABASE_URL), { schema: pgSchema })

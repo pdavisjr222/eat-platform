@@ -12,8 +12,8 @@ export const config = {
   domain: process.env.DOMAIN || "https://projecteat.org",
   webUrl: process.env.WEB_URL || "https://eat-platform-web.vercel.app",
 
-  // JWT
-  jwtSecret: process.env.JWT_SECRET || "default-secret-change-in-production",
+  // JWT — no fallback; validated below in production
+  jwtSecret: process.env.JWT_SECRET || "",
   jwtExpiresIn: "7d",
 
   // Google Maps
@@ -40,7 +40,7 @@ export const config = {
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000", 10), // 15 minutes
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100", 10),
 
-  // Database
+  // Database — SQLite fallback disabled in production (validated below)
   databaseUrl: process.env.DATABASE_URL || "",
   databasePath: process.env.DATABASE_PATH || "./db.sqlite",
 
@@ -56,6 +56,12 @@ if (config.nodeEnv === "production") {
   const hardMissing = hardRequired.filter((key) => !process.env[key]);
   if (hardMissing.length > 0) {
     console.error(`FATAL: Missing required environment variables: ${hardMissing.join(", ")}`);
+    process.exit(1);
+  }
+
+  // Reject weak JWT secrets in production
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    console.error("FATAL: JWT_SECRET must be at least 32 characters in production");
     process.exit(1);
   }
 

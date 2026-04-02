@@ -19,7 +19,8 @@ export async function seedDatabase() {
   // USERS
   // ============================================
   console.log("Creating users...");
-  const passwordHash = await hashPassword("Password123!");
+  const seedPassword = process.env.SEED_PASSWORD || "Password123!";
+  const passwordHash = await hashPassword(seedPassword);
 
   const seedUsers = [
     // Jamaica

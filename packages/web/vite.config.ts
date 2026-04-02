@@ -7,15 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
-      injectRegister: false, // Using custom registration
-      strategies: "injectManifest",
-      srcDir: "public",
-      filename: "sw.js",
-      injectManifest: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
-      },
+      registerType: "autoUpdate",
+      injectRegister: "auto",
       manifest: {
         name: "E.A.T. Platform",
         short_name: "E.A.T.",

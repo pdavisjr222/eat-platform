@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
+import { z, type ZodSchema } from "zod";
 import { config } from "./config";
 import { db } from "./db";
 import { users, auditLogs } from "./schema";
@@ -23,8 +24,8 @@ export const corsMiddleware = cors({
     // Exact match against configured domains
     if (allowedOrigins.has(origin)) return callback(null, true);
 
-    // Allow any Vercel preview deployment for this project
-    if (/^https:\/\/eat-platform-web[^.]*\.vercel\.app$/.test(origin)) {
+    // Allow Vercel preview deployments only for this specific project
+    if (/^https:\/\/eat-platform-web(-[a-z0-9]+)?\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
 
@@ -54,15 +55,24 @@ export const securityMiddleware = helmet({
   crossOriginEmbedderPolicy: false,
 });
 
-// Rate limiting - general API (more lenient in development)
+// Rate limiting - general API (per-user when authenticated, per-IP otherwise)
 export const apiRateLimiter = rateLimit({
   windowMs: config.rateLimitWindowMs,
   max: config.nodeEnv === "development" ? 1000 : config.rateLimitMaxRequests,
   message: { error: "Too many requests, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use userId from JWT if available, otherwise fall back to IP
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const payload = verifyToken(token);
+      if (payload?.userId) return `user:${payload.userId}`;
+    }
+    return req.ip || req.socket.remoteAddress || "unknown";
+  },
   skip: (req) => {
-    // Skip rate limiting for health checks and static assets in development
     if (req.path === "/api/health") return true;
     if (config.nodeEnv === "development" && !req.path.startsWith("/api")) return true;
     return false;
@@ -338,3 +348,55 @@ export function optionalAuth(
 
   next();
 }
+
+// Zod request validation middleware
+export function validateBody(schema: ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: result.error.flatten().fieldErrors,
+      });
+    }
+    req.body = result.data;
+    next();
+  };
+}
+
+export function validateQuery(schema: ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: result.error.flatten().fieldErrors,
+      });
+    }
+    req.query = result.data;
+    next();
+  };
+}
+
+export function validateParams(schema: ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.params);
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Invalid path parameters",
+        details: result.error.flatten().fieldErrors,
+      });
+    }
+    next();
+  };
+}
+
+// Common param schemas
+export const uuidParamSchema = z.object({
+  id: z.string().uuid("Invalid ID format"),
+});
+
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().max(100).optional().default(20),
+});

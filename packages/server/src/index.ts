@@ -2,8 +2,7 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index";
 import { requestTimeout } from "./middleware";
-
-const log = console.log;
+import logger from "./logger";
 
 const app = express();
 
@@ -13,16 +12,16 @@ declare module "http" {
   }
 }
 
-// Parse JSON body — 15mb limit to support base64-encoded image uploads
+// Parse JSON body — 2mb limit; use multipart uploads for large files
 app.use(
   express.json({
-    limit: "15mb",
+    limit: "2mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   })
 );
-app.use(express.urlencoded({ extended: false, limit: "15mb" }));
+app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -39,16 +38,15 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "...";
-      }
-
-      log(logLine);
+      logger.info({
+        method: req.method,
+        path,
+        status: res.statusCode,
+        duration,
+        ...(res.statusCode >= 400 && capturedJsonResponse
+          ? { response: capturedJsonResponse }
+          : {}),
+      }, `${req.method} ${path} ${res.statusCode} ${duration}ms`);
     }
   });
 
@@ -66,7 +64,7 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    console.error("Server error:", err);
+    logger.error({ err, status }, "Unhandled server error");
     res.status(status).json({ error: message });
   });
 
@@ -77,8 +75,7 @@ app.use((req, res, next) => {
       host: "0.0.0.0",
     },
     () => {
-      log(`E.A.T. API server running on port ${port}`);
-      log(`Environment: ${process.env.NODE_ENV || "development"}`);
+      logger.info({ port, env: process.env.NODE_ENV || "development" }, `E.A.T. API server running on port ${port}`);
     }
   );
 })();
