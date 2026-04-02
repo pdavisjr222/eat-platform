@@ -21,7 +21,7 @@ export const config = {
 
   // Resend Email
   resendApiKey: process.env.RESEND_API_KEY || "",
-  emailFrom: process.env.EMAIL_FROM || "noreply@projecteat.org",
+  emailFrom: process.env.EMAIL_FROM || "noreply@mail.projecteat.org",
 
   // Stripe
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
