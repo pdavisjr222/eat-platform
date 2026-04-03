@@ -9,6 +9,17 @@ import { eq } from "drizzle-orm";
 
 const ADMIN_EMAIL = "site@sitemedia.us";
 
+async function runMigrations() {
+  try {
+    await db.execute(
+      "ALTER TABLE foraging_spots ADD COLUMN IF NOT EXISTS other_names text" as any
+    );
+    logger.info("Migrations: foraging_spots.other_names ready");
+  } catch (err) {
+    logger.warn(`Migration warning: ${err}`);
+  }
+}
+
 async function ensureAdminUser() {
   try {
     const [existing] = await db.select({ id: users.id, role: users.role })
@@ -80,6 +91,7 @@ app.use((req, res, next) => {
   // Apply request timeout middleware
   app.use(requestTimeout(30000));
 
+  await runMigrations();
   await ensureAdminUser();
   const server = await registerRoutes(app);
 
