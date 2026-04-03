@@ -40,6 +40,31 @@ interface AuthState {
   clearAuth: () => void;
 }
 
+// Use sessionStorage by default (clears on browser close).
+// If user checks "Remember me", switch to localStorage before calling setAuth.
+export function setRememberMe(remember: boolean) {
+  if (remember) {
+    localStorage.setItem("eat-remember-me", "1");
+  } else {
+    localStorage.removeItem("eat-remember-me");
+  }
+}
+
+function getStorage(): Storage {
+  return localStorage.getItem("eat-remember-me") === "1"
+    ? localStorage
+    : sessionStorage;
+}
+
+const zustandStorage = {
+  getItem: (name: string) => getStorage().getItem(name),
+  setItem: (name: string, value: string) => getStorage().setItem(name, value),
+  removeItem: (name: string) => {
+    localStorage.removeItem(name);
+    sessionStorage.removeItem(name);
+  },
+};
+
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
@@ -51,10 +76,13 @@ export const useAuth = create<AuthState>()(
       },
       clearAuth: () => {
         set({ user: null, token: null, isAuthenticated: false });
+        localStorage.removeItem("eat-auth-storage");
+        sessionStorage.removeItem("eat-auth-storage");
       },
     }),
     {
       name: 'eat-auth-storage',
+      storage: zustandStorage,
       partialize: (state) => ({
         user: state.user,
         token: state.token,

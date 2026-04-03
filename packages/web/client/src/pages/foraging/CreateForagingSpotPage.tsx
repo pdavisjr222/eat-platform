@@ -72,6 +72,7 @@ const foragingSpotFormSchema = z.object({
   title: z.string().min(1),
   plantType: z.string().min(1),
   species: z.string().optional().nullable(),
+  otherNames: z.string().optional().nullable(),
   description: z.string().min(1),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
@@ -100,6 +101,7 @@ export default function CreateForagingSpotPage() {
       title: "",
       plantType: "fruit",
       species: "",
+      otherNames: "",
       description: "",
       latitude: undefined,
       longitude: undefined,
@@ -222,9 +224,23 @@ export default function CreateForagingSpotPage() {
                 name="species"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Species (optional)</FormLabel>
+                    <FormLabel>Latin / Scientific Name (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Mangifera indica" {...field} value={field.value || ""} data-testid="input-species" />
+                      <Input placeholder="e.g. Mangifera indica" {...field} value={field.value || ""} data-testid="input-species" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="otherNames"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Other Names (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Names from other regions, e.g. Mango, Mangue, Manga" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -350,9 +366,9 @@ export default function CreateForagingSpotPage() {
                 name="benefits"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Benefits (optional)</FormLabel>
+                    <FormLabel>Medicinal & Healing Benefits (optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Rich in vitamins, antioxidants..." {...field} value={field.value || ""} data-testid="input-benefits" />
+                      <Textarea placeholder="e.g. Anti-inflammatory, rich in Vitamin C, used to treat fever in traditional medicine..." {...field} value={field.value || ""} data-testid="input-benefits" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

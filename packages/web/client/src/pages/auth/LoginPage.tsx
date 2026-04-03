@@ -17,9 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/lib/auth";
+import { useAuth, setRememberMe } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
 import { Sprout, Mail, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -34,6 +35,7 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMeState] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -61,6 +63,7 @@ export default function LoginPage() {
       return body;
     },
     onSuccess: (data: any) => {
+      setRememberMe(rememberMe);
       setAuth(data.user, data.token);
       toast({ title: "Welcome back!", description: "You've successfully logged in." });
       setLocation("/");
@@ -192,6 +195,16 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember-me"
+                  checked={rememberMe}
+                  onCheckedChange={(v) => setRememberMeState(!!v)}
+                />
+                <label htmlFor="remember-me" className="text-sm text-muted-foreground cursor-pointer select-none">
+                  Keep me logged in
+                </label>
+              </div>
               <Button
                 type="submit"
                 className="w-full"

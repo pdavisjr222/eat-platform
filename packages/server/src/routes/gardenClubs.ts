@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
 import { authenticateToken, type AuthRequest } from "../auth";
-import { checkUserStatus, requireEmailVerified, getPaginationParams, buildPaginatedResponse } from "../middleware";
+import { checkUserStatus, getPaginationParams, buildPaginatedResponse } from "../middleware";
 import { gardenClubs } from "../schema";
 import { eq, and, or, ilike, desc, count } from "drizzle-orm";
 
@@ -72,7 +72,6 @@ router.post(
   "/api/garden-clubs",
   authenticateToken,
   checkUserStatus,
-  requireEmailVerified,
   async (req: AuthRequest, res) => {
     try {
       const { name, description, city, country, region, email, website, meetingSchedule, contactInfo, latitude, longitude, imageUrl } = req.body;

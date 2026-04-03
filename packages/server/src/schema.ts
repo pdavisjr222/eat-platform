@@ -283,6 +283,7 @@ export const foragingSpots = pgTable("foraging_spots", {
   edibleParts: text("edible_parts"),
   seasonality: text("seasonality"),
   benefits: text("benefits"),
+  otherNames: text("other_names"),
   accessNotes: text("access_notes"),
   isVerified: boolean("is_verified").notNull().default(false),
   verifiedBy: text("verified_by"),

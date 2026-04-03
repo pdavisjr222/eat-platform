@@ -6,7 +6,6 @@ import {
 } from "../auth";
 import {
   checkUserStatus,
-  requireEmailVerified,
   getPaginationParams,
   buildPaginatedResponse,
 } from "../middleware";
@@ -90,7 +89,6 @@ router.post(
   "/api/foraging-spots",
   authenticateToken,
   checkUserStatus,
-  requireEmailVerified,
   async (req: AuthRequest, res) => {
     try {
       const {
@@ -99,6 +97,7 @@ router.post(
         title,
         plantType,
         species,
+        otherNames,
         description,
         edibleParts,
         seasonality,
@@ -124,6 +123,7 @@ router.post(
           title,
           plantType,
           species,
+          otherNames,
           description,
           edibleParts,
           seasonality,
