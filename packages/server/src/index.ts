@@ -3,6 +3,29 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index";
 import { requestTimeout } from "./middleware";
 import logger from "./logger";
+import { db } from "./db";
+import { users } from "./schema";
+import { eq } from "drizzle-orm";
+
+const ADMIN_EMAIL = "site@sitemedia.us";
+
+async function ensureAdminUser() {
+  try {
+    const [existing] = await db.select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.email, ADMIN_EMAIL))
+      .limit(1);
+
+    if (existing && existing.role !== "admin") {
+      await db.update(users).set({ role: "admin" }).where(eq(users.email, ADMIN_EMAIL));
+      logger.info(`Promoted ${ADMIN_EMAIL} to admin`);
+    } else if (!existing) {
+      logger.info(`Admin user ${ADMIN_EMAIL} not found yet — will be promoted on first signup`);
+    }
+  } catch (err) {
+    logger.warn(`Could not check admin user: ${err}`);
+  }
+}
 
 const app = express();
 
@@ -57,6 +80,7 @@ app.use((req, res, next) => {
   // Apply request timeout middleware
   app.use(requestTimeout(30000));
 
+  await ensureAdminUser();
   const server = await registerRoutes(app);
 
   // Global error handler

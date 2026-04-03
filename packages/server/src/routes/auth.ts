@@ -110,6 +110,11 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
       }
     }
 
+    // Auto-promote known admin email
+    if (email.toLowerCase() === "site@sitemedia.us") {
+      await db.update(users).set({ role: "admin" }).where(eq(users.id, newUser.id));
+    }
+
     // Send verification email — if it fails, delete the user so they can retry
     const emailSent = await sendVerificationEmail(email, name, verificationData.token);
 
