@@ -43,6 +43,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
   const { data: userListings } = useQuery<Listing[]>({
     queryKey: ["/api/listings/my-listings"],
@@ -79,6 +80,7 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const base64 = await compressImage(file);
+      setLocalPreview(base64);
       uploadImageMutation.mutate(base64);
     } catch (err: any) {
       toast({ title: "Failed to process image", description: err.message, variant: "destructive" });
@@ -136,7 +138,7 @@ export default function ProfilePage() {
                   title="Click to change photo"
                 >
                   <Avatar className="h-32 w-32 mb-4">
-                    <AvatarImage src={resolveImageUrl(user.profileImageUrl) || undefined} alt={user.name} />
+                    <AvatarImage src={localPreview || resolveImageUrl(user.profileImageUrl) || undefined} alt={user.name} />
                     <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
                       {getInitials(user.name)}
                     </AvatarFallback>
