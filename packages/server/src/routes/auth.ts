@@ -110,8 +110,15 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
       }
     }
 
-    // Send verification email
-    await sendVerificationEmail(email, name, verificationData.token);
+    // Send verification email — if it fails, delete the user so they can retry
+    const emailSent = await sendVerificationEmail(email, name, verificationData.token);
+
+    if (!emailSent) {
+      await db.delete(users).where(eq(users.id, newUser.id));
+      return res.status(500).json({
+        error: "Failed to send verification email. Please try again.",
+      });
+    }
 
     res.status(201).json({
       message: "Account created. Please check your email to verify your account before logging in.",
