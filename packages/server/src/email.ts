@@ -2,6 +2,11 @@ import { Resend } from "resend";
 import { config } from "./config";
 
 // Initialize Resend only if API key is provided
+if (!config.resendApiKey) {
+  console.warn("[Email] RESEND_API_KEY is not set — all emails will be skipped silently");
+} else {
+  console.log("[Email] Resend initialized, key starts with:", config.resendApiKey.slice(0, 8) + "...");
+}
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 
 interface EmailOptions {
@@ -14,8 +19,8 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   // Skip email sending in development if no API key
   if (!resend) {
-    console.log("[Email] Skipped (no API key):", options.subject, "to", options.to);
-    return true; // Return true to not block development
+    console.warn("[Email] SKIPPED — no Resend client. Subject:", options.subject, "| To:", options.to);
+    return false; // Return false so signup rolls back the user
   }
 
   try {
