@@ -1,4 +1,4 @@
-import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User, Leaf, Sparkles, Mail, ShieldCheck } from "lucide-react";
+import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User, Leaf, Sparkles, Mail, ShieldCheck, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -34,7 +34,7 @@ const allNavigationItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, clearAuth } = useAuth();
   const { isMobile, setOpenMobile } = useSidebar();
   const { toast } = useToast();
   const [resent, setResent] = useState(false);
@@ -121,6 +121,13 @@ export function AppSidebar() {
             >
               <Mail className="h-3.5 w-3.5" />
               {resent ? "Email sent — check inbox" : resendMutation.isPending ? "Sending…" : "Resend verification email"}
+            </button>
+            <button
+              onClick={() => { clearAuth(); window.location.replace("/auth/login"); }}
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-black/20 hover:bg-black/30 transition-colors px-3 py-2 text-xs font-medium mt-2"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
             </button>
           </div>
         </SidebarFooter>
