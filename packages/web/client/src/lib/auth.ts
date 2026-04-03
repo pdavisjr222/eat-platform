@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@shared/schema';
 
 // Re-export the User type as AuthUser for convenience
@@ -56,14 +56,14 @@ function getStorage(): Storage {
     : sessionStorage;
 }
 
-const zustandStorage = {
+const dynamicStorage = () => ({
   getItem: (name: string) => getStorage().getItem(name),
   setItem: (name: string, value: string) => getStorage().setItem(name, value),
   removeItem: (name: string) => {
     localStorage.removeItem(name);
     sessionStorage.removeItem(name);
   },
-};
+});
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -82,7 +82,7 @@ export const useAuth = create<AuthState>()(
     }),
     {
       name: 'eat-auth-storage',
-      storage: zustandStorage,
+      storage: createJSONStorage(dynamicStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,
