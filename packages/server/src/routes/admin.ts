@@ -197,6 +197,34 @@ router.get("/api/admin/stats", authenticateToken, checkUserStatus, requireAdmin,
   }
 });
 
+router.delete("/api/admin/users/:id", authenticateToken, checkUserStatus, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({ error: "Cannot delete admin users" });
+    }
+
+    if (id === req.userId) {
+      return res.status(403).json({ error: "Cannot delete your own account" });
+    }
+
+    await db.delete(users).where(eq(users.id, id));
+    await logAuditAction(req.userId!, "delete", "user", id, { name: user.name, email: user.email }, {}, req);
+
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error: any) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
 // Create admin training module
 router.post(
   "/api/admin/training-modules",

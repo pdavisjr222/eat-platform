@@ -52,6 +52,7 @@ const MessagesPage = lazy(() => import("@/pages/MessagesPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const EditProfilePage = lazy(() => import("@/pages/EditProfilePage"));
 const GardenClubsPage = lazy(() => import("@/pages/GardenClubsPage"));
+const AdminPage = lazy(() => import("@/pages/AdminPage"));
 
 function PageLoader() {
   return (
@@ -364,6 +365,14 @@ function Router() {
         </AuthGuard>
       </Route>
       
+      <Route path="/admin">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <AdminPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,4 +1,4 @@
-import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User, Leaf, Sparkles, Mail } from "lucide-react";
+import { Home, Map, ShoppingBag, Users, Book, Calendar, Briefcase, Sprout, MessageSquare, User, Leaf, Sparkles, Mail, ShieldCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -84,6 +84,20 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {(user as any)?.role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/admin"}
+                    className="text-lg py-3 h-auto [&_svg]:h-6 [&_svg]:w-6 text-primary"
+                  >
+                    <Link href="/admin" onClick={() => isMobile && setOpenMobile(false)}>
+                      <ShieldCheck className="h-6 w-6" />
+                      <span className="font-semibold">Admin Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
