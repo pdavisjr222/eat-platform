@@ -113,34 +113,21 @@ router.get("/api/members/:id", authenticateToken, checkUserStatus, async (req: A
 
 router.put("/api/profile", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
   try {
-    const {
-      name,
-      country,
-      region,
-      city,
-      geographicRegion,
-      bio,
-      interests,
-      skills,
-      offerings,
-      profileImageUrl,
-    } = req.body;
+    const allowedFields = [
+      "name", "country", "region", "city", "geographicRegion",
+      "bio", "interests", "skills", "offerings", "profileImageUrl",
+    ] as const;
+
+    const updateData: Record<string, any> = { updatedAt: new Date() };
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updateData[key] = req.body[key];
+      }
+    }
 
     const [updatedUser] = await db
       .update(users)
-      .set({
-        name,
-        country,
-        region,
-        city,
-        geographicRegion,
-        bio,
-        interests,
-        skills,
-        offerings,
-        ...(profileImageUrl !== undefined ? { profileImageUrl } : {}),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(users.id, req.userId!))
       .returning();
 
