@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db";
 import { config } from "../config";
 import {
@@ -27,15 +28,40 @@ import {
 } from "../schema";
 import { eq, sql } from "drizzle-orm";
 
+// --- Zod Schemas ---
+const signupSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  country: z.string().optional(),
+  region: z.string().optional(),
+  city: z.string().optional(),
+  referralCode: z.string().optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 const router = Router();
 
 router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
   try {
-    const { name, email, password, country, region, city, referralCode: referrerCode } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Name, email, and password are required" });
+    const parsed = signupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message, details: parsed.error.errors });
     }
+    const { name, email, password, country, region, city, referralCode: referrerCode } = parsed.data;
 
     // Check if email exists
     const existingUser = await db
@@ -68,45 +94,49 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
       })
       .returning();
 
-    // Handle referral
+    // Handle referral — wrapped in try/catch so a referral failure doesn't break signup
     if (referrerCode) {
-      const [referrer] = await db
-        .select()
-        .from(users)
-        .where(eq(users.referralCode, referrerCode.toUpperCase()))
-        .limit(1);
+      try {
+        const [referrer] = await db
+          .select()
+          .from(users)
+          .where(eq(users.referralCode, referrerCode.toUpperCase()))
+          .limit(1);
 
-      if (referrer) {
-        await db
-          .update(users)
-          .set({ referredBy: referrer.id })
-          .where(eq(users.id, newUser.id));
+        if (referrer) {
+          await db
+            .update(users)
+            .set({ referredBy: referrer.id })
+            .where(eq(users.id, newUser.id));
 
-        // Give referral bonuses
-        await db.insert(creditTransactions).values([
-          {
-            userId: referrer.id,
-            type: "referral_bonus",
-            amount: 50,
-            description: `Referral bonus for inviting ${name}`,
-          },
-          {
-            userId: newUser.id,
-            type: "referral_bonus",
-            amount: 25,
-            description: "Welcome bonus for using a referral code",
-          },
-        ]);
+          // Give referral bonuses
+          await db.insert(creditTransactions).values([
+            {
+              userId: referrer.id,
+              type: "referral_bonus",
+              amount: 50,
+              description: `Referral bonus for inviting ${name}`,
+            },
+            {
+              userId: newUser.id,
+              type: "referral_bonus",
+              amount: 25,
+              description: "Welcome bonus for using a referral code",
+            },
+          ]);
 
-        await db
-          .update(users)
-          .set({ creditBalance: sql`${users.creditBalance} + 50` })
-          .where(eq(users.id, referrer.id));
+          await db
+            .update(users)
+            .set({ creditBalance: sql`${users.creditBalance} + 50` })
+            .where(eq(users.id, referrer.id));
 
-        await db
-          .update(users)
-          .set({ creditBalance: sql`${users.creditBalance} + 25` })
-          .where(eq(users.id, newUser.id));
+          await db
+            .update(users)
+            .set({ creditBalance: sql`${users.creditBalance} + 25` })
+            .where(eq(users.id, newUser.id));
+        }
+      } catch (referralErr) {
+        console.error("Referral processing failed (signup still succeeded):", referralErr);
       }
     }
 
@@ -136,11 +166,11 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
 
 router.post("/api/auth/login", authRateLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message, details: parsed.error.errors });
     }
+    const { email, password } = parsed.data;
 
     const [user] = await db
       .select()
@@ -273,11 +303,11 @@ router.post("/api/auth/resend-verification", authRateLimiter, async (req, res) =
 
 router.post("/api/auth/forgot-password", authRateLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message, details: parsed.error.errors });
     }
+    const { email } = parsed.data;
 
     const [user] = await db
       .select()
@@ -311,15 +341,11 @@ router.post("/api/auth/forgot-password", authRateLimiter, async (req, res) => {
 
 router.post("/api/auth/reset-password", authRateLimiter, async (req, res) => {
   try {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      return res.status(400).json({ error: "Token and new password are required" });
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message, details: parsed.error.errors });
     }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
-    }
+    const { token, password } = parsed.data;
 
     const [user] = await db
       .select()

@@ -24,8 +24,8 @@ export const corsMiddleware = cors({
     // Exact match against configured domains
     if (allowedOrigins.has(origin)) return callback(null, true);
 
-    // Allow Vercel preview deployments only for this specific project
-    if (/^https:\/\/eat-platform-web(-[a-z0-9]+)?\.vercel\.app$/.test(origin)) {
+    // Allow Vercel preview deployments — project slug + git hash segments (bounded length)
+    if (/^https:\/\/eat-platform-web(-[a-z0-9]{1,20}){0,2}\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
 

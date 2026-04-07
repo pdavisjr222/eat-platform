@@ -16,6 +16,11 @@ async function runMigrations() {
     );
     logger.info("Migrations: foraging_spots.other_names ready");
   } catch (err) {
+    // In production, migration failures are fatal
+    if (process.env.NODE_ENV === "production") {
+      logger.error(`Migration failed: ${err}`);
+      process.exit(1);
+    }
     logger.warn(`Migration warning: ${err}`);
   }
 }
@@ -88,6 +93,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Health check — before any middleware that might reject
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Apply request timeout middleware
   app.use(requestTimeout(30000));
 
