@@ -16,12 +16,8 @@ async function runMigrations() {
     );
     logger.info("Migrations: foraging_spots.other_names ready");
   } catch (err) {
-    // In production, migration failures are fatal
-    if (process.env.NODE_ENV === "production") {
-      logger.error(`Migration failed: ${err}`);
-      process.exit(1);
-    }
-    logger.warn(`Migration warning: ${err}`);
+    // Migration for optional column — log but don't crash
+    logger.warn(`Migration warning (non-fatal): ${err}`);
   }
 }
 
