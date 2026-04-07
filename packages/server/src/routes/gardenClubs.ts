@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
 import { authenticateToken, type AuthRequest } from "../auth";
-import { checkUserStatus, getPaginationParams, buildPaginatedResponse } from "../middleware";
+import { checkUserStatus, requireEmailVerified, getPaginationParams, buildPaginatedResponse } from "../middleware";
 import { gardenClubs } from "../schema";
 import { eq, and, or, ilike, desc, count } from "drizzle-orm";
 

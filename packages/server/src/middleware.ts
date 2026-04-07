@@ -77,7 +77,7 @@ export const apiRateLimiter = rateLimit({
     const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.ip || req.socket.remoteAddress || "unknown";
     return ip;
   },
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: false, ip: false, trustProxy: false, default: false },
   skip: (req) => {
     if (req.path === "/api/health") return true;
     if (config.nodeEnv === "development" && !req.path.startsWith("/api")) return true;
