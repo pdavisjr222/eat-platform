@@ -44,6 +44,8 @@ async function ensureAdminUser() {
 }
 
 const app = express();
+// Trust proxy for Railway/cloud environments (fixes express-rate-limit IPv6 issue)
+app.set("trust proxy", 1);
 
 declare module "http" {
   interface IncomingMessage {
@@ -95,6 +97,9 @@ app.use((req, res, next) => {
 (async () => {
   // Health check — before any middleware that might reject
   app.get("/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+  app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 

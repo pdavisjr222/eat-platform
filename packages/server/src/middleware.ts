@@ -67,11 +67,17 @@ export const apiRateLimiter = rateLimit({
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
-      const payload = verifyToken(token);
-      if (payload?.userId) return `user:${payload.userId}`;
+      try {
+        const payload = verifyToken(token);
+        if (payload?.userId) return `user:${payload.userId}`;
+      } catch {}
     }
-    return req.ip || req.socket.remoteAddress || "unknown";
+    // Use x-forwarded-for for proxied environments (Railway), fall back to IP
+    const forwarded = req.headers["x-forwarded-for"];
+    const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.ip || req.socket.remoteAddress || "unknown";
+    return ip;
   },
+  validate: { xForwardedForHeader: false },
   skip: (req) => {
     if (req.path === "/api/health") return true;
     if (config.nodeEnv === "development" && !req.path.startsWith("/api")) return true;
