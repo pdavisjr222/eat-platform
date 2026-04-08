@@ -18,7 +18,7 @@ import {
 import { Send, Plus, Search, MessageSquare, ArrowLeft, Users, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 
 // Server returns conversations enriched with lastMessage + unreadCount
 type ConversationUser = {
@@ -355,7 +355,7 @@ export default function MessagesPage() {
                   return (
                     <div key={post.id} className="flex gap-3 group">
                       <Avatar className="h-9 w-9 flex-shrink-0 mt-0.5">
-                        <AvatarImage src={post.authorProfileImageUrl ?? undefined} />
+                        <AvatarImage src={getMediaUrl(post.authorProfileImageUrl) ?? undefined} />
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {getInitials(post.authorName)}
                         </AvatarFallback>
@@ -455,7 +455,7 @@ export default function MessagesPage() {
                         className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors text-left"
                       >
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={m.profileImageUrl ?? undefined} />
+                          <AvatarImage src={getMediaUrl(m.profileImageUrl) ?? undefined} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                             {getInitials(m.name)}
                           </AvatarFallback>
@@ -524,7 +524,7 @@ export default function MessagesPage() {
                   >
                     <div className="relative flex-shrink-0">
                       <Avatar className="h-11 w-11">
-                        <AvatarImage src={conv.profileImageUrl ?? undefined} />
+                        <AvatarImage src={getMediaUrl(conv.profileImageUrl) ?? undefined} />
                         <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                           {getInitials(conv.name)}
                         </AvatarFallback>
@@ -587,7 +587,7 @@ export default function MessagesPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <Avatar className="h-9 w-9 flex-shrink-0">
-                <AvatarImage src={selectedConv.profileImageUrl ?? undefined} />
+                <AvatarImage src={getMediaUrl(selectedConv.profileImageUrl) ?? undefined} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                   {getInitials(selectedConv.name)}
                 </AvatarFallback>
@@ -640,7 +640,7 @@ export default function MessagesPage() {
                                 <div className="w-7 flex-shrink-0">
                                   {showAvatar && (
                                     <Avatar className="h-7 w-7">
-                                      <AvatarImage src={selectedConv.profileImageUrl ?? undefined} />
+                                      <AvatarImage src={getMediaUrl(selectedConv.profileImageUrl) ?? undefined} />
                                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                                         {getInitials(selectedConv.name)}
                                       </AvatarFallback>
@@ -678,7 +678,7 @@ export default function MessagesPage() {
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center">
                   <Avatar className="h-16 w-16 mb-4">
-                    <AvatarImage src={selectedConv.profileImageUrl ?? undefined} />
+                    <AvatarImage src={getMediaUrl(selectedConv.profileImageUrl) ?? undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                       {getInitials(selectedConv.name)}
                     </AvatarFallback>

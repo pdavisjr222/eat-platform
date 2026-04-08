@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -205,7 +205,7 @@ export default function EventDetailPage() {
         <div className="space-y-2">
           <div className="w-full h-56 rounded-xl overflow-hidden bg-muted">
             <img
-              src={eventImages[activeImage]}
+              src={getMediaUrl(eventImages[activeImage])}
               alt={event.title}
               className="w-full h-full object-cover"
             />
@@ -221,7 +221,7 @@ export default function EventDetailPage() {
                     i === activeImage ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(src)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

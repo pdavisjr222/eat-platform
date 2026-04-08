@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -183,7 +183,7 @@ export default function VendorDetailPage() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <Avatar className="h-24 w-24 flex-shrink-0">
-              <AvatarImage src={vendor.logoUrl || undefined} alt={vendor.name} />
+              <AvatarImage src={getMediaUrl(vendor.logoUrl) || undefined} alt={vendor.name} />
               <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                 {getInitials(vendor.name)}
               </AvatarFallback>
@@ -241,9 +241,9 @@ export default function VendorDetailPage() {
               {vendor.mediaItems.map((item: any, i: number) => (
                 <div key={i} className="rounded-lg overflow-hidden border bg-muted/20">
                   {item.type === "image" && (
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                    <a href={getMediaUrl(item.url)} target="_blank" rel="noopener noreferrer">
                       <img
-                        src={item.url}
+                        src={getMediaUrl(item.url)}
                         alt={item.caption || `Media ${i + 1}`}
                         className="w-full aspect-video object-cover hover:opacity-90 transition-opacity"
                         loading="lazy"
@@ -252,7 +252,7 @@ export default function VendorDetailPage() {
                   )}
                   {item.type === "video" && (
                     <video
-                      src={item.url}
+                      src={getMediaUrl(item.url)}
                       controls
                       className="w-full aspect-video bg-black"
                       preload="metadata"
@@ -263,7 +263,7 @@ export default function VendorDetailPage() {
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                         <Music className="h-6 w-6 text-primary" />
                       </div>
-                      <audio src={item.url} controls className="w-full" preload="metadata" />
+                      <audio src={getMediaUrl(item.url)} controls className="w-full" preload="metadata" />
                     </div>
                   )}
                   {item.caption && (
@@ -434,7 +434,7 @@ export default function VendorDetailPage() {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarImage src={review.reviewer?.profileImageUrl ?? undefined} />
+                          <AvatarImage src={getMediaUrl(review.reviewer?.profileImageUrl) ?? undefined} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {getInitials(review.reviewer?.name ?? "?")}
                           </AvatarFallback>

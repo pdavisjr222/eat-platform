@@ -10,7 +10,7 @@ import { Search, Plus, MapPin, Eye, ShoppingBag, Pencil, Tag } from "lucide-reac
 import type { Listing } from "@shared/schema";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { resolveImageUrl } from "@/lib/utils";
+import { getMediaUrl } from "@/lib/queryClient";
 
 const listingTypes = [
   { value: "all",    label: "All",    emoji: "🌿" },
@@ -201,7 +201,7 @@ export default function MarketplacePage() {
                   <div className="relative h-48 overflow-hidden">
                     {hasImage ? (
                       <img
-                        src={resolveImageUrl((listing.images as string[])[0])}
+                        src={getMediaUrl((listing.images as string[])[0])}
                         alt={listing.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

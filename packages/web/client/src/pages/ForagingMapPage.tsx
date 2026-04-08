@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Leaf } from "lucide-react";
 import type { ForagingSpot } from "@shared/schema";
 import { useLocation } from "wouter";
-import { resolveImageUrl } from "@/lib/utils";
+import { getMediaUrl } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Fix Leaflet default marker icons in Vite builds
@@ -186,7 +186,7 @@ export default function ForagingMapPage() {
                 <div className="aspect-video bg-muted relative">
                   {spot.images && spot.images.length > 0 ? (
                     <img
-                      src={resolveImageUrl(spot.images[0])}
+                      src={getMediaUrl(spot.images[0])}
                       alt={spot.title}
                       className="w-full h-full object-cover"
                     />

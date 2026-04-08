@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { resolveImageUrl } from "@/lib/utils";
 import {
   ArrowLeft,
   MapPin,
@@ -184,7 +183,7 @@ export default function ListingDetailPage() {
           <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
             {images.length > 0 ? (
               <img
-                src={resolveImageUrl(images[activeImage])}
+                src={getMediaUrl(images[activeImage])}
                 alt={listing.title}
                 className="w-full h-full object-cover"
               />
@@ -205,7 +204,7 @@ export default function ListingDetailPage() {
                     i === activeImage ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={resolveImageUrl(src)} alt="" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(src)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -275,7 +274,7 @@ export default function ListingDetailPage() {
               className="flex items-center gap-3 w-full text-left rounded-lg border p-3 hover:bg-muted/50 transition-colors"
             >
               <Avatar className="h-10 w-10">
-                <AvatarImage src={seller.profileImageUrl ?? undefined} />
+                <AvatarImage src={getMediaUrl(seller.profileImageUrl) ?? undefined} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                   {getInitials(seller.name)}
                 </AvatarFallback>
@@ -348,7 +347,7 @@ export default function ListingDetailPage() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2.5">
                     <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={review.reviewer?.profileImageUrl ?? undefined} />
+                      <AvatarImage src={getMediaUrl(review.reviewer?.profileImageUrl) ?? undefined} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                         {getInitials(review.reviewer?.name ?? "?")}
                       </AvatarFallback>

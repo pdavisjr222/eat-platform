@@ -22,16 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getMediaUrl } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
-
-const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:5000").replace(/\/$/, "");
-
-function resolveImageUrl(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith("http") || url.startsWith("data:")) return url;
-  return `${API_BASE}${url}`;
-}
 
 
 const profileSchema = z.object({
@@ -115,7 +107,7 @@ export default function EditProfilePage() {
   const [skills, setSkills] = useState<string[]>((user as any)?.skills ?? []);
   const [offerings, setOfferings] = useState<string[]>((user as any)?.offerings ?? []);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
-    resolveImageUrl((user as any)?.profileImageUrl)
+    getMediaUrl((user as any)?.profileImageUrl)
   );
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
 

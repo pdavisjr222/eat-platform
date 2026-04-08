@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { resolveImageUrl } from "@/lib/utils";
+import { getMediaUrl } from "@/lib/queryClient";
 import {
   ArrowLeft,
   MapPin,
@@ -102,7 +102,7 @@ export default function ForagingSpotDetailPage() {
           <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
             {images.length > 0 ? (
               <img
-                src={resolveImageUrl(images[activeImage])}
+                src={getMediaUrl(images[activeImage])}
                 alt={spot.title}
                 className="w-full h-full object-cover"
               />
@@ -123,7 +123,7 @@ export default function ForagingSpotDetailPage() {
                     i === activeImage ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <img src={resolveImageUrl(src)} alt="" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(src)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

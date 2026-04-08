@@ -24,8 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { resolveImageUrl } from "@/lib/utils";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { eventDateTimeToUTC, utcToEventDateTime } from "@/lib/datetime";
 import { Loader2, ArrowLeft, Trash2, Upload, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -252,7 +251,7 @@ export default function EditEventPage() {
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {existingImages.map((url, i) => (
                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-                  <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(url)} alt="" className="w-full h-full object-cover" />
                   <button type="button" onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80">
                     <X className="h-3 w-3 text-white" />
                   </button>

@@ -9,8 +9,7 @@ import { MapPin, Mail, Calendar, Award, Users, ShoppingBag, MessageSquare, LogOu
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Listing, Review } from "@shared/schema";
-import { resolveImageUrl } from "@/lib/utils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -126,7 +125,7 @@ export default function ProfilePage() {
                   title="Click to change photo"
                 >
                   <Avatar className="h-32 w-32 mb-4">
-                    <AvatarImage src={localPreview || resolveImageUrl(user.profileImageUrl) || undefined} alt={user.name} />
+                    <AvatarImage src={localPreview || getMediaUrl(user.profileImageUrl) || undefined} alt={user.name} />
                     <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
                       {getInitials(user.name)}
                     </AvatarFallback>

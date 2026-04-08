@@ -22,9 +22,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getMediaUrl } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
-import { resolveImageUrl } from "@/lib/utils";
 import { type Listing } from "@shared/schema";
 import { z } from "zod";
 
@@ -258,7 +257,7 @@ export default function EditListingPage() {
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {(listing?.images ?? []).map((url, i) => (
                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-                  <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(url)} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeExistingImage(url)}

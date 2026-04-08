@@ -8,6 +8,16 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").t
 // but base64 encoding inflates size ~33% so 10MB gives comfortable headroom)
 const MAX_PAYLOAD_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Convert a relative upload path (e.g. /uploads/vendors/img.jpg) to a full URL
+ * pointing at the API server, so images served from Railway load on the Vercel frontend.
+ */
+export function getMediaUrl(path: string | null | undefined): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) return path;
+  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = useAuth.getState().token;
   return token ? { Authorization: `Bearer ${token}` } : {};

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, MapPin, MessageSquare } from "lucide-react";
 import type { User } from "@shared/schema";
 import { useLocation } from "wouter";
+import { getMediaUrl } from "@/lib/queryClient";
 
 export default function MembersPage() {
   const [, setLocation] = useLocation();
@@ -88,7 +89,7 @@ export default function MembersPage() {
             >
               <div className="flex items-start gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={member.profileImageUrl || undefined} alt={member.name} />
+                  <AvatarImage src={getMediaUrl(member.profileImageUrl) || undefined} alt={member.name} />
                   <AvatarFallback className="text-lg bg-primary text-primary-foreground">
                     {getInitials(member.name)}
                   </AvatarFallback>
