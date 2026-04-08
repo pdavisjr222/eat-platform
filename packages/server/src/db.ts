@@ -12,10 +12,16 @@ if (!process.env.DATABASE_URL) {
 
 // Production always uses Neon PostgreSQL via DATABASE_URL
 // Local dev: set DATABASE_URL to a local postgres or use tsx with the shared SQLite setup
-const connectionString = process.env.DATABASE_URL
+const rawConnectionString = process.env.DATABASE_URL
   || (process.env.NODE_ENV === "production"
     ? (() => { throw new Error("DATABASE_URL is required in production"); })()
     : "postgresql://localhost/eat_dev");
+
+// Sanitize: remove any newlines, carriage returns, or extra spaces that may have
+// been introduced by environment variable editors (e.g., Railway dashboard)
+const connectionString = (rawConnectionString as string).replace(/[\r\n\t]+/g, "").replace(/\s+/g, "").trim();
+
+console.log(`[DB] Connecting to: ${connectionString.substring(0, 30)}...${connectionString.substring(connectionString.length - 20)}`);
 
 export const db: NeonHttpDatabase<typeof pgSchema> = drizzleNeon(
   neon(connectionString as string),
