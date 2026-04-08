@@ -286,10 +286,14 @@ export default function GardenClubsPage() {
               <Label>Description *</Label>
               <Textarea placeholder="What does your club do?" rows={3} {...field("description")} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label>City</Label>
                 <Input placeholder="City" {...field("city")} />
+              </div>
+              <div className="space-y-1">
+                <Label>Region / State</Label>
+                <Input placeholder="Region" {...field("region")} />
               </div>
               <div className="space-y-1">
                 <Label>Country</Label>

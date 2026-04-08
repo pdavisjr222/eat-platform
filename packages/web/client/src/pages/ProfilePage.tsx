@@ -10,35 +10,12 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Listing, Review } from "@shared/schema";
 import { resolveImageUrl } from "@/lib/utils";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-async function compressImage(file: File, maxPx = 400): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-    const img = new Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl);
-      let { width, height } = img;
-      if (width > height) {
-        if (width > maxPx) { height = Math.round((height * maxPx) / width); width = maxPx; }
-      } else {
-        if (height > maxPx) { width = Math.round((width * maxPx) / height); height = maxPx; }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.onerror = () => reject(new Error("Image load failed"));
-    img.src = objUrl;
-  });
-}
 
 export default function ProfilePage() {
-  const { user, clearAuth, setAuth, token } = useAuth();
+  const { user, clearAuth } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,15 +31,27 @@ export default function ProfilePage() {
   });
 
   const uploadImageMutation = useMutation({
-    mutationFn: async (base64: string) => {
-      const res = await apiRequest("PUT", "/api/profile", {
-        name: user?.name,
-        profileImageUrl: base64,
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").trim().replace(/\/+$/, "");
+      const token = useAuth.getState().token;
+      const res = await fetch(`${API_BASE_URL}/api/profile/image`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        credentials: "include",
       });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || res.statusText);
+      }
       return res.json();
     },
-    onSuccess: (data: any) => {
-      if (token) setAuth(data.user ?? data, token);
+    onSuccess: () => {
+      // Refetch user data to get updated profileImageUrl
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({ title: "Profile photo updated!" });
     },
     onError: (error: any) => {
@@ -79,9 +68,8 @@ export default function ProfilePage() {
     if (!file) return;
     setUploading(true);
     try {
-      const base64 = await compressImage(file);
-      setLocalPreview(base64);
-      uploadImageMutation.mutate(base64);
+      setLocalPreview(URL.createObjectURL(file));
+      uploadImageMutation.mutate(file);
     } catch (err: any) {
       toast({ title: "Failed to process image", description: err.message, variant: "destructive" });
     } finally {

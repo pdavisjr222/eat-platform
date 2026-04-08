@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
   MapPin,
@@ -21,6 +25,7 @@ import {
   Pencil,
   ListChecks,
   Gift,
+  Send,
 } from "lucide-react";
 
 const typeStyles: Record<string, string> = {
@@ -44,6 +49,27 @@ export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [applied, setApplied] = useState(false);
+
+  const applyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/jobs/${id}/apply`, {
+        coverLetter: coverLetter || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      setApplied(true);
+      setShowApplyForm(false);
+      toast({ title: "Application submitted!", description: "The job poster will review your application." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to apply", description: error.message || "Please try again.", variant: "destructive" });
+    },
+  });
 
   const { data: job, isLoading, error } = useQuery<any>({
     queryKey: ["/api/jobs", id],
@@ -266,10 +292,50 @@ export default function JobDetailPage() {
                       </Button>
                     </a>
                   )}
-                  {!job.applicationUrl && !job.applicationEmail && (
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      Contact the poster directly to apply.
-                    </p>
+                  {!job.applicationUrl && !job.applicationEmail && !applied && !showApplyForm && (
+                    <Button
+                      className="w-full"
+                      disabled={isClosed}
+                      onClick={() => setShowApplyForm(true)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {isClosed ? "Position Closed" : "Apply Now"}
+                    </Button>
+                  )}
+                  {showApplyForm && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label>Cover Letter (optional)</Label>
+                        <Textarea
+                          placeholder="Tell them why you're a great fit..."
+                          rows={4}
+                          value={coverLetter}
+                          onChange={(e) => setCoverLetter(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setShowApplyForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1"
+                          onClick={() => applyMutation.mutate()}
+                          disabled={applyMutation.isPending}
+                        >
+                          {applyMutation.isPending ? "Submitting..." : "Submit Application"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {applied && (
+                    <div className="text-center py-2">
+                      <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                      <p className="text-sm font-medium text-green-600">Application Submitted</p>
+                    </div>
                   )}
                 </>
               )}

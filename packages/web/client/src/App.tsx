@@ -44,6 +44,7 @@ const CreateEventPage = lazy(() => import("@/pages/events/CreateEventPage"));
 const EditEventPage = lazy(() => import("@/pages/events/EditEventPage"));
 const EventDetailPage = lazy(() => import("@/pages/events/EventDetailPage"));
 const LearningPage = lazy(() => import("@/pages/LearningPage"));
+const LearningDetailPage = lazy(() => import("@/pages/learning/LearningDetailPage"));
 const JobBoardPage = lazy(() => import("@/pages/JobBoardPage"));
 const CreateJobPage = lazy(() => import("@/pages/jobs/CreateJobPage"));
 const EditJobPage = lazy(() => import("@/pages/jobs/EditJobPage"));
@@ -297,6 +298,14 @@ function Router() {
         <AuthGuard>
           <AuthenticatedLayout>
             <LearningPage />
+          </AuthenticatedLayout>
+        </AuthGuard>
+      </Route>
+
+      <Route path="/learning/:id">
+        <AuthGuard>
+          <AuthenticatedLayout>
+            <LearningDetailPage />
           </AuthenticatedLayout>
         </AuthGuard>
       </Route>

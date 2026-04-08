@@ -81,7 +81,7 @@ export default function ForagingMapPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card className="overflow-hidden">
-            <div className="h-[420px] w-full relative">
+            <div className="h-[588px] w-full relative">
               <MapContainer
                 center={[20, 0]}
                 zoom={2}

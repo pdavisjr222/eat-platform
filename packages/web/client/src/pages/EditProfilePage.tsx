@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, X, Camera, Loader2 } from "lucide-react";
+import { ArrowLeft, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,29 +33,6 @@ function resolveImageUrl(url: string | null | undefined): string | undefined {
   return `${API_BASE}${url}`;
 }
 
-async function compressImage(file: File, maxPx = 400): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-    const img = new Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl);
-      let { width, height } = img;
-      if (width > height) {
-        if (width > maxPx) { height = Math.round((height * maxPx) / width); width = maxPx; }
-      } else {
-        if (height > maxPx) { width = Math.round((width * maxPx) / height); height = maxPx; }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.onerror = () => reject(new Error("Image load failed"));
-    img.src = objUrl;
-  });
-}
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -140,8 +117,7 @@ export default function EditProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
     resolveImageUrl((user as any)?.profileImageUrl)
   );
-  const [pendingImageBase64, setPendingImageBase64] = useState<string | null>(null);
-  const [compressing, setCompressing] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -157,21 +133,30 @@ export default function EditProfilePage() {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCompressing(true);
-    try {
-      const base64 = await compressImage(file);
-      setPendingImageBase64(base64);
-      setAvatarUrl(base64);
-    } catch (err: any) {
-      toast({ title: "Failed to process image", description: err.message, variant: "destructive" });
-    } finally {
-      setCompressing(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    setPendingImageFile(file);
+    setAvatarUrl(URL.createObjectURL(file));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const updateMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
+      // Upload image first if pending
+      if (pendingImageFile) {
+        const formData = new FormData();
+        formData.append("image", pendingImageFile);
+        const imgToken = useAuth.getState().token;
+        const imgRes = await fetch(`${API_BASE}/api/profile/image`, {
+          method: "POST",
+          headers: imgToken ? { Authorization: `Bearer ${imgToken}` } : {},
+          body: formData,
+          credentials: "include",
+        });
+        if (!imgRes.ok) {
+          const text = await imgRes.text();
+          throw new Error(text || imgRes.statusText);
+        }
+      }
+
       const res = await apiRequest("PUT", "/api/profile", {
         name: data.name,
         bio: data.bio || undefined,
@@ -181,7 +166,6 @@ export default function EditProfilePage() {
         interests,
         skills,
         offerings,
-        ...(pendingImageBase64 ? { profileImageUrl: pendingImageBase64 } : {}),
       });
       return res.json();
     },
@@ -232,11 +216,6 @@ export default function EditProfilePage() {
                       {user?.name ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "?"}
                     </AvatarFallback>
                   </Avatar>
-                  {compressing && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-                      <Loader2 className="h-5 w-5 text-white animate-spin" />
-                    </div>
-                  )}
                 </div>
                 <div>
                   <Button
@@ -244,10 +223,9 @@ export default function EditProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={compressing}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    {compressing ? "Processing..." : "Change Photo"}
+                    Change Photo
                   </Button>
                   <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP — max 10MB</p>
                   <input

@@ -140,6 +140,69 @@ router.post(
   }
 );
 
+router.post(
+  "/api/jobs/:id/apply",
+  authenticateToken,
+  checkUserStatus,
+  requireEmailVerified,
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { coverLetter, resumeUrl } = req.body;
+
+      const [job] = await db
+        .select()
+        .from(jobPosts)
+        .where(eq(jobPosts.id, id))
+        .limit(1);
+
+      if (!job) {
+        return res.status(404).json({ error: "Job post not found" });
+      }
+
+      if (job.status !== "active") {
+        return res.status(400).json({ error: "This position is no longer accepting applications" });
+      }
+
+      if (job.postedByUserId === req.userId) {
+        return res.status(400).json({ error: "You cannot apply to your own job post" });
+      }
+
+      // Check for existing application
+      const [existing] = await db
+        .select()
+        .from(jobApplications)
+        .where(
+          and(
+            eq(jobApplications.jobId, id),
+            eq(jobApplications.applicantUserId, req.userId!)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        return res.status(409).json({ error: "You have already applied to this job" });
+      }
+
+      const [application] = await db
+        .insert(jobApplications)
+        .values({
+          jobId: id,
+          applicantUserId: req.userId!,
+          coverLetter: coverLetter || null,
+          resumeUrl: resumeUrl || null,
+          status: "pending",
+        })
+        .returning();
+
+      res.status(201).json(application);
+    } catch (error: any) {
+      console.error("Error applying to job:", error);
+      res.status(500).json({ error: "Failed to submit application" });
+    }
+  }
+);
+
 router.put("/api/jobs/:id", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;

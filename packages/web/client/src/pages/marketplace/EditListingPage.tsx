@@ -23,34 +23,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import { resolveImageUrl } from "@/lib/utils";
 import { type Listing } from "@shared/schema";
 import { z } from "zod";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
-
-// Compress + resize to JPEG ≤800px, ~100-200KB — keeps body well under Railway proxy limit
-const compressImage = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const MAX = 800;
-      let { width, height } = img;
-      if (width > MAX || height > MAX) {
-        if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-        else { width = Math.round((width * MAX) / height); height = MAX; }
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.75));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
 
 const editListingFormSchema = z.object({
   type: z.string().min(1),
@@ -180,9 +158,21 @@ export default function EditListingPage() {
     if (!newFiles.length) return;
     setIsUploading(true);
     try {
-      const base64Images = await Promise.all(newFiles.map(compressImage));
-      const allImages = [...(listing?.images ?? []), ...base64Images];
-      await apiRequest("PUT", `/api/listings/${listingId}`, { images: allImages });
+      const formData = new FormData();
+      newFiles.forEach((file) => formData.append("images", file));
+
+      const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").trim().replace(/\/+$/, "");
+      const token = useAuth.getState().token;
+      const uploadRes = await fetch(`${API_BASE_URL}/api/listings/${listingId}/images`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        credentials: "include",
+      });
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text();
+        throw new Error(text || uploadRes.statusText);
+      }
       queryClient.invalidateQueries({ queryKey: [`/api/listings/${listingId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       setNewFiles([]);
