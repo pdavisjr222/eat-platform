@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { config } from "./config";
 
+// Email service — verification links use config.webUrl (Vercel frontend)
 // Initialize Resend only if API key is provided
 if (!config.resendApiKey) {
   console.warn("[Email] RESEND_API_KEY is not set — all emails will be skipped silently");
