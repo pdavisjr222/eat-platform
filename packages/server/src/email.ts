@@ -24,6 +24,15 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return false; // Return false so signup rolls back the user
   }
 
+  console.log(
+    "[Email] Attempting send | from:",
+    config.emailFrom,
+    "| to:",
+    options.to,
+    "| subject:",
+    options.subject
+  );
+
   try {
     const { data, error } = await resend.emails.send({
       from: config.emailFrom,
@@ -34,14 +43,35 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     });
 
     if (error) {
-      console.error("Email send error:", error);
+      console.error(
+        "[Email] Resend rejected send | from:",
+        config.emailFrom,
+        "| to:",
+        options.to,
+        "| error:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      );
       return false;
     }
 
-    console.log("Email sent successfully:", data?.id);
+    console.log("[Email] Sent successfully | id:", data?.id, "| to:", options.to);
     return true;
   } catch (error) {
-    console.error("Email service error:", error);
+    const err = error as Error;
+    console.error(
+      "[Email] Service threw exception | from:",
+      config.emailFrom,
+      "| to:",
+      options.to,
+      "| name:",
+      err?.name,
+      "| message:",
+      err?.message,
+      "| stack:",
+      err?.stack,
+      "| raw:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error || {}))
+    );
     return false;
   }
 }
