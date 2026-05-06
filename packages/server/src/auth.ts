@@ -14,13 +14,31 @@ export async function comparePasswords(password: string, hash: string): Promise<
   return await bcrypt.compare(password, hash);
 }
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiresIn as `${number}${"s" | "m" | "h" | "d"}` });
+// Admin tokens expire faster than regular tokens because admin sessions have
+// access to private member data; a stolen admin token is higher-risk. An
+// impersonation token also carries an impersonatorId claim so the audit trail
+// survives the swap.
+export function generateToken(
+  userId: string,
+  options?: { role?: string; impersonatorId?: string }
+): string {
+  const isAdminLike = options?.role === "admin" || options?.role === "moderator";
+  const expiresIn = isAdminLike ? config.jwtAdminExpiresIn : config.jwtExpiresIn;
+  const payload: Record<string, unknown> = { userId };
+  if (options?.impersonatorId) payload.impersonatorId = options.impersonatorId;
+  return jwt.sign(payload, config.jwtSecret, {
+    expiresIn: expiresIn as `${number}${"s" | "m" | "h" | "d"}`,
+  });
 }
 
-export function verifyToken(token: string): { userId: string } | null {
+export function verifyToken(
+  token: string
+): { userId: string; impersonatorId?: string } | null {
   try {
-    return jwt.verify(token, config.jwtSecret) as { userId: string };
+    return jwt.verify(token, config.jwtSecret) as {
+      userId: string;
+      impersonatorId?: string;
+    };
   } catch (error) {
     return null;
   }
@@ -55,6 +73,9 @@ export function generateReferralCode(): string {
 export interface AuthRequest extends Request {
   userId?: string;
   userRole?: "user" | "moderator" | "admin";
+  // Set when the JWT was issued via admin impersonation; carries the
+  // original admin's id so audit logs can attribute actions correctly.
+  impersonatorId?: string;
 }
 
 export function authenticateToken(
@@ -75,6 +96,7 @@ export function authenticateToken(
   }
 
   req.userId = payload.userId;
+  if (payload.impersonatorId) req.impersonatorId = payload.impersonatorId;
   next();
 }
 

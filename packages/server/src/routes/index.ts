@@ -23,6 +23,7 @@ import reviewsRouter from "./reviews";
 import notificationsRouter from "./notifications";
 import subscriptionsRouter from "./subscriptions";
 import adminRouter from "./admin";
+import adminExtendedRouter from "./admin-extended";
 import miscRouter from "./misc";
 import gardenClubsRouter from "./gardenClubs";
 import communityPostsRouter from "./communityPosts";
@@ -58,6 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(notificationsRouter);
   app.use(subscriptionsRouter);
   app.use(adminRouter);
+  app.use(adminExtendedRouter);
   app.use(gardenClubsRouter);
   app.use(communityPostsRouter);
 

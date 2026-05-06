@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { db } from "../db";
-import { config } from "../config";
+import {
+  signupSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "./auth-schemas";
 import {
   hashPassword,
   comparePasswords,
@@ -9,6 +13,7 @@ import {
   generateVerificationToken,
   generatePasswordResetToken,
   generateReferralCode,
+  validatePasswordStrength,
   authenticateToken,
   sanitizeUser,
   type AuthRequest,
@@ -27,31 +32,11 @@ import {
   creditTransactions,
 } from "../schema";
 import { eq, sql } from "drizzle-orm";
+import logger from "../logger";
 
-// --- Zod Schemas ---
-const signupSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  country: z.string().optional(),
-  region: z.string().optional(),
-  city: z.string().optional(),
-  referralCode: z.string().optional(),
-});
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-});
-
-const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Token is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+// Zod schemas live in ./auth-schemas.ts so they can be unit-tested without
+// dragging in the full route module. Strength rules (upper+lower+digit) are
+// applied separately via validatePasswordStrength inside the handlers.
 
 const router = Router();
 
@@ -63,6 +48,12 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
     }
     const { name, email, password, country, region, city, referralCode: referrerCode } = parsed.data;
 
+    // Enforce password strength (upper, lower, digit)
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ error: strength.errors[0], details: strength.errors });
+    }
+
     // Check if email exists
     const existingUser = await db
       .select()
@@ -71,7 +62,7 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
       .limit(1);
 
     if (existingUser.length > 0) {
-      return res.status(400).json({ error: "Email already registered" });
+      return res.status(409).json({ error: "Email already registered" });
     }
 
     const passwordHash = await hashPassword(password);
@@ -94,7 +85,7 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
       })
       .returning();
 
-    // Handle referral — wrapped in try/catch so a referral failure doesn't break signup
+    // Handle referral -- wrapped in try/catch so a referral failure never breaks signup
     if (referrerCode) {
       try {
         const [referrer] = await db
@@ -103,7 +94,7 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
           .where(eq(users.referralCode, referrerCode.toUpperCase()))
           .limit(1);
 
-        if (referrer) {
+        if (referrer && referrer.id !== newUser.id) {
           await db
             .update(users)
             .set({ referredBy: referrer.id })
@@ -136,16 +127,11 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
             .where(eq(users.id, newUser.id));
         }
       } catch (referralErr) {
-        console.error("Referral processing failed (signup still succeeded):", referralErr);
+        logger.error({ referralErr }, "Referral processing failed (signup still succeeded)");
       }
     }
 
-    // Auto-promote known admin email
-    if (email.toLowerCase() === "site@sitemedia.us") {
-      await db.update(users).set({ role: "admin" }).where(eq(users.id, newUser.id));
-    }
-
-    // Send verification email — if it fails, delete the user so they can retry
+    // Send verification email -- if it fails, delete the user so they can retry
     const emailSent = await sendVerificationEmail(email, name, verificationData.token);
 
     if (!emailSent) {
@@ -158,8 +144,8 @@ router.post("/api/auth/signup", authRateLimiter, async (req, res) => {
     res.status(201).json({
       message: "Account created. Please check your email to verify your account before logging in.",
     });
-  } catch (error: any) {
-    console.error("Signup error:", error);
+  } catch (error) {
+    logger.error({ error }, "Signup error");
     res.status(500).json({ error: "Failed to create account" });
   }
 });
@@ -206,14 +192,14 @@ router.post("/api/auth/login", authRateLimiter, async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, { role: user.role });
 
     res.json({
       user: sanitizeUser(user),
       token,
     });
-  } catch (error: any) {
-    console.error("Login error:", error);
+  } catch (error) {
+    logger.error({ error }, "Login error");
     res.status(500).json({ error: "Login failed" });
   }
 });
@@ -222,7 +208,7 @@ router.post("/api/auth/verify-email", async (req, res) => {
   try {
     const { token } = req.body;
 
-    if (!token) {
+    if (!token || typeof token !== "string") {
       return res.status(400).json({ error: "Verification token is required" });
     }
 
@@ -250,12 +236,14 @@ router.post("/api/auth/verify-email", async (req, res) => {
       })
       .where(eq(users.id, user.id));
 
-    // Send welcome email
-    await sendWelcomeEmail(user.email, user.name);
+    // Send welcome email (fire-and-forget -- don't block response)
+    sendWelcomeEmail(user.email, user.name).catch((err) =>
+      logger.warn({ err }, "Welcome email failed (non-fatal)")
+    );
 
     res.json({ message: "Email verified successfully" });
-  } catch (error: any) {
-    console.error("Email verification error:", error);
+  } catch (error) {
+    logger.error({ error }, "Email verification error");
     res.status(500).json({ error: "Verification failed" });
   }
 });
@@ -264,7 +252,7 @@ router.post("/api/auth/resend-verification", authRateLimiter, async (req, res) =
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return res.status(400).json({ error: "Email is required" });
     }
 
@@ -274,12 +262,9 @@ router.post("/api/auth/resend-verification", authRateLimiter, async (req, res) =
       .where(eq(users.email, email.toLowerCase()))
       .limit(1);
 
-    if (!user) {
-      return res.json({ message: "If the email exists, a verification email will be sent" });
-    }
-
-    if (user.emailVerified) {
-      return res.status(400).json({ error: "Email is already verified" });
+    // Always return success to prevent email enumeration
+    if (!user || user.emailVerified) {
+      return res.json({ message: "If the email exists and is unverified, a verification email will be sent" });
     }
 
     const verificationData = generateVerificationToken();
@@ -292,11 +277,15 @@ router.post("/api/auth/resend-verification", authRateLimiter, async (req, res) =
       })
       .where(eq(users.id, user.id));
 
-    await sendVerificationEmail(user.email, user.name, verificationData.token);
+    const sent = await sendVerificationEmail(user.email, user.name, verificationData.token);
+
+    if (!sent) {
+      return res.status(500).json({ error: "Failed to send verification email" });
+    }
 
     res.json({ message: "Verification email sent" });
-  } catch (error: any) {
-    console.error("Resend verification error:", error);
+  } catch (error) {
+    logger.error({ error }, "Resend verification error");
     res.status(500).json({ error: "Failed to send verification email" });
   }
 });
@@ -333,8 +322,8 @@ router.post("/api/auth/forgot-password", authRateLimiter, async (req, res) => {
     await sendPasswordResetEmail(user.email, user.name, resetData.token);
 
     res.json({ message: "If the email exists, a reset link will be sent" });
-  } catch (error: any) {
-    console.error("Forgot password error:", error);
+  } catch (error) {
+    logger.error({ error }, "Forgot password error");
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -346,6 +335,12 @@ router.post("/api/auth/reset-password", authRateLimiter, async (req, res) => {
       return res.status(400).json({ error: parsed.error.errors[0].message, details: parsed.error.errors });
     }
     const { token, password } = parsed.data;
+
+    // Enforce strength on reset too
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ error: strength.errors[0], details: strength.errors });
+    }
 
     const [user] = await db
       .select()
@@ -374,8 +369,8 @@ router.post("/api/auth/reset-password", authRateLimiter, async (req, res) => {
       .where(eq(users.id, user.id));
 
     res.json({ message: "Password reset successfully" });
-  } catch (error: any) {
-    console.error("Reset password error:", error);
+  } catch (error) {
+    logger.error({ error }, "Reset password error");
     res.status(500).json({ error: "Failed to reset password" });
   }
 });
@@ -393,8 +388,8 @@ router.get("/api/auth/me", authenticateToken, checkUserStatus, async (req: AuthR
     }
 
     res.json({ user: sanitizeUser(user) });
-  } catch (error: any) {
-    console.error("Get current user error:", error);
+  } catch (error) {
+    logger.error({ error }, "Get current user error");
     res.status(500).json({ error: "Failed to get user" });
   }
 });

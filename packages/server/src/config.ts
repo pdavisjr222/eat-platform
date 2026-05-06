@@ -14,6 +14,9 @@ export const config = {
   // JWT -- no fallback; validated below in production
   jwtSecret: process.env.JWT_SECRET || "",
   jwtExpiresIn: "7d",
+  // Admin sessions expire faster than regular sessions because admins have
+  // access to private member data; a stolen admin token is more dangerous.
+  jwtAdminExpiresIn: "1d",
 
   // Google Maps
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
