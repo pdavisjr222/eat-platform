@@ -4,14 +4,31 @@ import { queryClient, apiRequest } from "./lib/queryClient";
 import { QueryClientProvider, useMutation } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AuthGuard } from "@/components/AuthGuard";
 import { initStorage } from "@/lib/storage/init";
 import { useAuth } from "@/lib/auth";
-import { Mail, X, Loader2 } from "lucide-react";
+import { Mail, X, Loader2, Menu, PanelLeftClose } from "lucide-react";
+
+function MenuButton() {
+  const { toggleSidebar, state, isMobile, openMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : state === "expanded";
+  return (
+    <button
+      onClick={toggleSidebar}
+      data-testid="button-sidebar-toggle"
+      aria-label={isOpen ? "Close menu" : "Open menu"}
+      aria-expanded={isOpen}
+      className="flex items-center gap-2 px-3 h-10 rounded-md border-2 border-foreground/20 bg-background hover:bg-accent hover:border-foreground/40 hover:shadow-sm active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {isOpen ? <PanelLeftClose className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      <span className="text-sm font-semibold">Menu</span>
+    </button>
+  );
+}
 
 // Auth pages — eager (small, needed immediately)
 import LoginPage from "@/pages/auth/LoginPage";
@@ -97,7 +114,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between p-4 border-b bg-background">
-            <SidebarTrigger className="h-10 w-10 [&_svg]:h-6 [&_svg]:w-6" data-testid="button-sidebar-toggle" />
+            <MenuButton />
             <ThemeToggle />
           </header>
           {showBanner && (
