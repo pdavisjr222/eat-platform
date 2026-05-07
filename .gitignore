@@ -61,3 +61,4 @@ nul
 .local/
 .agents/
 skills-lock.json
+.eat-credentials.env
