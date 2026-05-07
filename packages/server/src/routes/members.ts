@@ -11,11 +11,7 @@ import {
   getPaginationParams,
   buildPaginatedResponse,
 } from "../middleware";
-import {
-  uploadProfileImage,
-  getFileUrl,
-  deleteFile,
-} from "../upload";
+import { uploadProfileImage } from "../upload";
 import { users } from "../schema";
 import { eq, and, desc, or, like, count } from "drizzle-orm";
 
@@ -153,21 +149,15 @@ router.post(
   },
   async (req: AuthRequest, res) => {
     try {
-      if (!req.file) {
+      if (!req.file || !req.file.buffer) {
         return res.status(400).json({ error: "No image uploaded" });
       }
 
-      const imageUrl = getFileUrl(req.file.filename, "profiles");
-
-      // Delete old profile image if exists
-      const [currentUser] = await db
-        .select({ profileImageUrl: users.profileImageUrl })
-        .from(users)
-        .where(eq(users.id, req.userId!));
-
-      if (currentUser?.profileImageUrl) {
-        await deleteFile(currentUser.profileImageUrl);
-      }
+      // Store as a base64 data URL in the users.profile_image_url column.
+      // Memory storage means we never touch the ephemeral Railway filesystem,
+      // so the picture survives every redeploy.
+      const mime = req.file.mimetype || "image/jpeg";
+      const imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
 
       await db
         .update(users)

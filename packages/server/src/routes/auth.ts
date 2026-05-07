@@ -375,6 +375,61 @@ router.post("/api/auth/reset-password", authRateLimiter, async (req, res) => {
   }
 });
 
+// Change password while logged in. Requires the current password to prove
+// the session isn't a stolen token, then sets the new password. Same strength
+// rules as signup / reset.
+router.post("/api/auth/change-password", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+
+    if (!currentPassword || typeof currentPassword !== "string") {
+      return res.status(400).json({ error: "Current password is required" });
+    }
+    if (!newPassword || typeof newPassword !== "string") {
+      return res.status(400).json({ error: "New password is required" });
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.valid) {
+      return res.status(400).json({ error: strength.errors[0], details: strength.errors });
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.userId!))
+      .limit(1);
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const ok = await comparePasswords(currentPassword, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "Current password is incorrect" });
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: "New password must be different from current password" });
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await db
+      .update(users)
+      .set({
+        passwordHash: newHash,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    logger.error({ error }, "Change password error");
+    res.status(500).json({ error: "Failed to change password" });
+  }
+});
+
 router.get("/api/auth/me", authenticateToken, checkUserStatus, async (req: AuthRequest, res) => {
   try {
     const [user] = await db

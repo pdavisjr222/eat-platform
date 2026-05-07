@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, getMediaUrl } from "@/lib/queryClient";
+import { apiRequest, getMediaUrl, API_BASE_URL } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 
 
@@ -122,11 +122,44 @@ export default function EditProfilePage() {
     },
   });
 
+  // Resize the picked image to a square 512x512 max via canvas before upload.
+  // Phone photos are routinely 5MB+; resizing client-side keeps the request
+  // small and avoids hitting the 10MB server limit.
+  const resizeImage = async (file: File, maxSize = 512, quality = 0.85): Promise<Blob> => {
+    const bitmap = await createImageBitmap(file);
+    const ratio = Math.min(maxSize / bitmap.width, maxSize / bitmap.height, 1);
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas context unavailable");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Resize failed"))),
+        "image/jpeg",
+        quality
+      );
+    });
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPendingImageFile(file);
-    setAvatarUrl(URL.createObjectURL(file));
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Not an image", description: "Pick a JPEG, PNG, GIF, or WebP file.", variant: "destructive" });
+      return;
+    }
+    try {
+      const resized = await resizeImage(file);
+      const resizedFile = new File([resized], "profile.jpg", { type: "image/jpeg" });
+      setPendingImageFile(resizedFile);
+      setAvatarUrl(URL.createObjectURL(resized));
+    } catch (err: any) {
+      toast({ title: "Could not read image", description: err?.message ?? "Try a different photo.", variant: "destructive" });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -137,7 +170,7 @@ export default function EditProfilePage() {
         const formData = new FormData();
         formData.append("image", pendingImageFile);
         const imgToken = useAuth.getState().token;
-        const imgRes = await fetch(`${API_BASE}/api/profile/image`, {
+        const imgRes = await fetch(`${API_BASE_URL}/api/profile/image`, {
           method: "POST",
           headers: imgToken ? { Authorization: `Bearer ${imgToken}` } : {},
           body: formData,
@@ -368,6 +401,148 @@ export default function EditProfilePage() {
 
         </form>
       </Form>
+
+      {/* Account security — separate form so it submits independently */}
+      <ChangePasswordCard />
     </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+
+  const changeMutation = useMutation({
+    mutationFn: async (vars: { currentPassword: string; newPassword: string }) => {
+      const res = await apiRequest("POST", "/api/auth/change-password", vars);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password changed", description: "Use your new password next time you log in." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Could not change password",
+        description: err?.message ?? "Try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation must be identical.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Must be at least 8 characters with one uppercase letter, one lowercase letter, and one number.",
+        variant: "destructive",
+      });
+      return;
+    }
+    changeMutation.mutate({ currentPassword, newPassword });
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-base">Change Password</CardTitle>
+        <CardDescription>
+          Update your password. You'll stay logged in on this device.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Current password</label>
+            <div className="mt-1 relative">
+              <Input
+                type={showCurrent ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                data-testid="input-current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showCurrent ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">New password</label>
+            <div className="mt-1 relative">
+              <Input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+                minLength={8}
+                data-testid="input-new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showNew ? "Hide" : "Show"}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              At least 8 characters with one uppercase, one lowercase, and one number.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Confirm new password</label>
+            <Input
+              type={showNew ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              minLength={8}
+              className="mt-1"
+              data-testid="input-confirm-password"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            disabled={
+              changeMutation.isPending ||
+              !currentPassword ||
+              !newPassword ||
+              !confirmPassword
+            }
+            data-testid="button-change-password"
+          >
+            {changeMutation.isPending ? "Updating..." : "Change Password"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

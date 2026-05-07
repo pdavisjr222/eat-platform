@@ -1,8 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { useAuth } from "./auth";
 
-// API base URL - defaults to localhost:5000 in development
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").trim().replace(/\/+$/, "");
+// API base URL - defaults to localhost:5000 in development. Exported so
+// pages doing raw fetch (e.g. multipart uploads where apiRequest's
+// auto-JSON-stringify is wrong) can reuse the same origin.
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").trim().replace(/\/+$/, "");
 
 // Pre-flight guard: reject payloads above 10MB before sending (proxy/server limit is 15MB,
 // but base64 encoding inflates size ~33% so 10MB gives comfortable headroom)

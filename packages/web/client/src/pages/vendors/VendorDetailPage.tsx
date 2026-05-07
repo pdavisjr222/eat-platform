@@ -193,7 +193,9 @@ export default function VendorDetailPage() {
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <h1 className="text-3xl font-serif font-bold">{vendor.name}</h1>
                 {vendor.verified && (
-                  <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" title="Verified vendor" />
+                  <span title="Verified vendor" aria-label="Verified vendor" className="inline-flex">
+                    <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" />
+                  </span>
                 )}
               </div>
 

@@ -70,10 +70,14 @@ const createStorage = (subdir: string) =>
     },
   });
 
-// Profile image upload
+// Profile image upload — memory storage. Railway containers have ephemeral
+// filesystems (wiped on every redeploy), so disk-stored profile pics
+// disappeared after each deploy. Memory storage lets the route hand the buffer
+// straight to the DB as a base64 data URL, which persists across deploys.
+// Client-side resize keeps these well under 1MB.
 export const uploadProfileImage = multer({
-  storage: createStorage("profiles"),
-  limits: { fileSize: config.maxFileSize },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB per file (post client-side resize)
   fileFilter: imageFilter,
 }).single("image");
 
