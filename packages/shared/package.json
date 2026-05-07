@@ -6,7 +6,7 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "npx --no-install tsc || tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "lint": "eslint ."
@@ -15,10 +15,10 @@
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0",
     "drizzle-orm": "^0.39.1",
-    "drizzle-zod": "^0.7.0"
+    "drizzle-zod": "^0.7.0",
+    "typescript": "5.6.3"
   },
   "devDependencies": {
-    "typescript": "5.6.3",
     "@types/node": "20.16.11"
   }
 }
