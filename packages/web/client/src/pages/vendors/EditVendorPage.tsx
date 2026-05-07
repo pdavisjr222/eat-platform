@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { fileToResizedDataUrl } from "@/lib/image";
 import { getToken } from "@/lib/auth";
 import { Store, ArrowLeft, Upload, Trash2, Music, ImageIcon } from "lucide-react";
 
@@ -442,18 +443,80 @@ export default function EditVendorPage() {
               <FormField
                 control={form.control}
                 name="logoUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Logo URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://yourbusiness.com/logo.png" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Direct link to your logo image. Leave blank to use your initials as avatar.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const logoFileInputRef = useRef<HTMLInputElement>(null);
+                  const handleLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const dataUrl = await fileToResizedDataUrl(file, 512, 0.85);
+                      field.onChange(dataUrl);
+                    } catch (err: any) {
+                      toast({
+                        title: "Could not read image",
+                        description: err?.message ?? "Try a different file.",
+                        variant: "destructive",
+                      });
+                    }
+                    if (logoFileInputRef.current) logoFileInputRef.current.value = "";
+                  };
+                  return (
+                    <FormItem>
+                      <FormLabel>Logo</FormLabel>
+                      <div className="flex flex-col sm:flex-row gap-3 items-start">
+                        {field.value && (
+                          <div className="h-20 w-20 rounded-md border bg-muted/40 overflow-hidden flex-shrink-0">
+                            <img
+                              src={field.value}
+                              alt="Logo preview"
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 space-y-2 w-full">
+                          <FormControl>
+                            <Input
+                              placeholder="https://yourbusiness.com/logo.png"
+                              {...field}
+                            />
+                          </FormControl>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => logoFileInputRef.current?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload File
+                            </Button>
+                            {field.value && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => field.onChange("")}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                            <input
+                              ref={logoFileInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleLogoFile}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <FormDescription>
+                        Paste a link OR upload an image (auto-resized to 512×512). Leave blank to use your initials.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <div className="flex gap-3 pt-2">

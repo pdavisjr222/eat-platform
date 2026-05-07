@@ -23,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getMediaUrl, API_BASE_URL } from "@/lib/queryClient";
+import { resizeImage } from "@/lib/image";
 import { useAuth } from "@/lib/auth";
 
 
@@ -121,29 +122,6 @@ export default function EditProfilePage() {
       country: (user as any)?.country ?? "",
     },
   });
-
-  // Resize the picked image to a square 512x512 max via canvas before upload.
-  // Phone photos are routinely 5MB+; resizing client-side keeps the request
-  // small and avoids hitting the 10MB server limit.
-  const resizeImage = async (file: File, maxSize = 512, quality = 0.85): Promise<Blob> => {
-    const bitmap = await createImageBitmap(file);
-    const ratio = Math.min(maxSize / bitmap.width, maxSize / bitmap.height, 1);
-    const w = Math.round(bitmap.width * ratio);
-    const h = Math.round(bitmap.height * ratio);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas context unavailable");
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("Resize failed"))),
-        "image/jpeg",
-        quality
-      );
-    });
-  };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

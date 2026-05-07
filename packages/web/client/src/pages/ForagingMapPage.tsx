@@ -81,7 +81,13 @@ export default function ForagingMapPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card className="overflow-hidden">
-            <div className="h-[588px] w-full relative">
+            {/*
+              Map fills 99% of the viewport (minus space for the app header
+              and page title), with a 500px floor so it stays usable on
+              short windows. Was previously capped at 588px which left
+              huge empty space on desktops and laptops.
+            */}
+            <div className="h-[calc(99vh-180px)] min-h-[500px] w-full relative">
               <MapContainer
                 center={[20, 0]}
                 zoom={2}
