@@ -18,7 +18,8 @@
 **Stack:** Turborepo monorepo, Expo, Express, PostgreSQL, Redis, Socket.IO, Agora SDK
 **Scale Target:** 10k+ concurrent users, 1M+ total users
 **Domain:** projecteat.org
-**Deployed:** api.eat-platform.railway.app (server) | eat-platform.vercel.app (web)
+**Deployed:** `server-production-5d63.up.railway.app` (Railway) | `eat-platform-web.vercel.app` (Vercel)
+**⚠️ Wrong URLs (do NOT use):** `eatserver-production.up.railway.app` (orphaned old Railway service, still alive) | `eat-platform.vercel.app` (squatter showing "EDGE Talent Engine" — not on user's account, can't delete)
 
 ---
 
@@ -37,7 +38,7 @@ EcologyAgricultureTrade/
 
 ---
 
-## Current Status (Updated: 2026-03-05)
+## Current Status (Updated: 2026-05-06)
 
 ### ✅ Complete
 - Turborepo monorepo + 4 packages wired
@@ -52,9 +53,27 @@ EcologyAgricultureTrade/
 - Vendor referral service (8-char codes, 2% recurring commissions)
 - FCM notification service
 - CI/CD — GitHub Actions → Railway (server) + Vercel (web, GitHub integration) + EAS (mobile)
-- CI/CD: lint + test steps have `continue-on-error: true` (eslint not installed — build never blocked)
-- CI/CD: `deploy-server` has `continue-on-error: true` (requires RAILWAY_TOKEN secret)
+- CI/CD: all `continue-on-error` removed — broken code can no longer silently ship
 - CI/CD: Vercel deploys via GitHub integration; VERCEL_TOKEN/ORG_ID/PROJECT_ID set as GitHub secrets
+- **Production hardening (2026-04-27):**
+  - Socket.IO Redis adapter (`@socket.io/redis-adapter`) — multi-instance pub/sub scaling
+  - Distributed rate limiting — all 3 limiters use `RedisStore` via `rate-limit-redis`; graceful fallback to in-memory when Redis unavailable
+  - Proper Drizzle migrations — `packages/server/migrations/pg/0001_foraging_spots_other_names.sql` replaces the inline `ALTER TABLE` that was in `index.ts`
+  - Admin seed script — `packages/server/scripts/seed-admin.ts` (`npm run seed:admin`) replaces hardcoded auto-promotion; requires `ADMIN_EMAIL` + `ADMIN_BOOTSTRAP_TOKEN` (≥16 chars) env vars
+  - JSON 404 catch-all handler added before global error handler in `index.ts`
+  - Global error handler uses `unknown` type narrowing (no `any`); extracts `status`/`statusCode` from errors
+  - All `console.log/warn/error` in server code replaced with `pino` logger calls
+  - `error: any` → `error: unknown` throughout auth routes + middleware
+  - Signup returns 409 (Conflict) for duplicate email (was 400)
+  - `resend-verification` no longer leaks whether email exists
+  - Self-referral guard added to signup
+  - Password min 8 chars enforced on reset-password (was 6)
+  - `tsc --noEmit` exits 0 — zero TypeScript errors
+  - **Sync-push privilege escalation closed** (`packages/server/src/routes/v1/sync.ts`):
+    - `SERVER_ONLY_TABLES` set rejects all sync writes to `auditLogs`, `payments`, `creditTransactions`, `subscriptionPlans`, `trainingModules`, `vendors`, `videoCalls`, `videoCallParticipants`, and the community/shared tables (`gardenClubs`, `seedBanks`, `resourceHubs`, `events`, `coupons`, `vendorReferrals`) — those go through dedicated POST routes
+    - `USERS_WRITABLE_FIELDS` and per-table `WRITABLE_FIELDS` allowlists drop any unknown or sensitive field from `data` before INSERT/UPDATE; user can no longer self-promote by setting `role`/`isPremium`/`creditBalance`/etc.
+    - `OWNERSHIP_COLUMN` map: CREATE is rejected for tables not registered there, and the owner column is force-set to `req.userId` regardless of client value (blocks "create on behalf of another user")
+    - Users may UPDATE only their own `users` row via sync (recordId === userId), and CREATE/DELETE are forbidden on `users`
 - CI/CD: Vercel build was failing — fixed by syncing `package-lock.json` after `react-native-maps` add
 - Mobile: full auth flow (login, signup, forgot-password, verify-email, reset-password)
 - Mobile: tab navigation — 5 visible tabs (Home, Market, Messages, **More**, Profile) + 7 hidden screens
@@ -95,12 +114,32 @@ EcologyAgricultureTrade/
   - `packages/server/src/db.ts` — env-based: DATABASE_URL→Neon, else→SQLite
   - `packages/server/drizzle.config.ts` — auto-selects PG or SQLite dialect
 
+### ✅ Resolved 2026-05-06 (full-day signup-flow debug)
+- **Email verification flow end-to-end working** — signup → email arrives via marybanks Resend (`re_bUktVAfv_*` key) → link points to `eat-platform-web.vercel.app/auth/verify-email?token=…` → click verifies and redirects to login
+- **Two Railway services discovered** — Vercel was calling stale `eatserver-production.up.railway.app` while fixes were going to `server-production-5d63.up.railway.app`. Vercel's `VITE_API_URL` env var now points to `server-production-5d63`. The old service is still alive (deletion deferred) — do NOT trust it.
+- **Railway connected to GitHub repo** — was deploying via `railway up` CLI only with stale builds; now auto-deploys from `pdavisjr222/eat-platform` (origin) and `Project-EAT-App/eat-platform` (project-eat-app) on every commit to `main`
+- **Build dependencies fixed** — Railway's production npm install skips devDependencies. Moved to `dependencies`: `typescript` (in `packages/shared/package.json`), `esbuild` and `cross-env` (in `packages/server/package.json`). NEVER move them back.
+- **`packages/server/src/routes/auth-schemas.ts` finally committed** — was sitting locally untracked, breaking every fresh build. Now in git.
+- **`package-lock.json` regenerated** to match the dependency moves; Railway uses `npm ci` which fails on lockfile drift.
+- **Service worker caching trap** — the web app is a PWA. After any Vite rebuild, users must clear service worker + storage (DevTools → Application → "Clear site data") OR hard-reload, or they'll keep loading the previous bundle forever. Incognito sidesteps this for testing.
+- **Sidebar toggle UX** — replaced cryptic icon with a labeled "Menu" button (border, hamburger icon, hover/active states, icon flips when open).
+- **Email logging** — `packages/server/src/email.ts` now prints full Resend rejection payload + stack on failure. Use Railway logs to diagnose any future send failures.
+- **Vercel build cache caveat** — when changing any `VITE_*` env var, redeploy with **build cache OFF**. Vite bakes `import.meta.env.VITE_*` into the bundle at build time.
+
+### ⚠️ Operational notes from 2026-05-06
+- **Railway API token saved** to `.eat-credentials.env` (gitignored) — Claude can now query deployments, view build logs, and trigger redeploys directly via `https://backboard.railway.com/graphql/v2` without screenshots from the user.
+- **Railway IDs to remember:** project `20b9f892-8593-4d40-87ac-ccd252a86038`, server service `26929463-33dd-49b8-806d-2ea6d3390298`.
+- **DB ownership note:** the Neon DB is shared between BOTH Railway services. Cleanup scripts must delete user-dependent rows in dependency order — never `TRUNCATE … CASCADE users`, that wipes content (events, listings, foraging spots, etc.).
+- **DKIM record format** — `resend._domainkey.notifications` only has `p=…`, missing the `v=DKIM1; k=rsa;` prefix. Gmail still accepts it (RFC 6376 says the prefix is optional). Leave alone unless future bounces specifically blame DKIM.
+
 ### ⏳ Pending (Required Before Launch)
-- **SECURITY:** Rotate Google Maps API key + Resend API key — both are live credentials exposed in `.env` on disk; JWT_SECRET also needs a strong production value
-- Set `DATABASE_URL` in Railway dashboard (Neon project: `eat-platform`, ID: `calm-voice-93662463`)
-- Configure external services: Firebase, Agora, Stripe, Redis (see .env.example)
+- **SECURITY:** Rotate ALL secrets — Google Maps API key, Resend API key, JWT_SECRET (use 64-char random hex in production)
+- **CLEANUP:** Decide fate of orphaned `eatserver-production.up.railway.app` Railway service. Currently alive but unused. Either delete it or leave as cold standby — but never re-route Vercel to it.
+- **Run `npm run seed:admin`** once per environment (Railway + local) to bootstrap the admin user
+- Set `DATABASE_URL` + `REDIS_URL` in Railway dashboard (Neon project: `eat-platform`, ID: `calm-voice-93662463`)
+- Configure external services: Firebase, Agora, Stripe (see `.env.example`)
 - Replace PWA placeholder SVG icons with real PNG files
-- App store submission: replace placeholder values in eas.json (Apple ID, Team ID, etc.)
+- App store submission: replace placeholder values in `eas.json` (Apple ID, Team ID, etc.)
 - Physical iOS + Android device testing
 - Write test suite (80% coverage target — zero tests currently exist)
 
@@ -193,9 +232,10 @@ version, syncStatus, lastSyncedAt, deviceId, isDeleted, deletedAt
 
 **Migrations:**
 ```bash
-cd packages/server && npm run db:migrate
+cd packages/server && npm run db:migrate   # applies pending SQL migrations
 # or: npm run db:push  (schema push without migration file)
 ```
+Migration files live in `packages/server/migrations/pg/` — never use inline `ALTER TABLE` in application boot code. Always create a proper migration file and update `meta/_journal.json`.
 
 ---
 
@@ -410,6 +450,8 @@ npm run server   # Express only
 - **Push notification:** `NotificationService.sendToUser()` + FCM token in `deviceRegistry`
 - **Video call:** `AgoraService` token → `videoCalls` table → Agora SDK in UI
 - **Offline sync:** sync metadata on table → queue in `syncQueue` → `SyncManager.performSync()`
+- **Bootstrap admin:** `ADMIN_EMAIL=x ADMIN_BOOTSTRAP_TOKEN=y npm run seed:admin` (one-shot, safe to re-run)
+- **Schema change:** write SQL in `packages/server/migrations/pg/NNNN_description.sql` → update `meta/_journal.json` → `npm run db:migrate`
 
 ---
 
@@ -458,6 +500,31 @@ npm run server   # Express only
 | Redis | Caching/sessions | `REDIS_URL` |
 | Resend | Email | `RESEND_API_KEY` |
 | Google Maps | Foraging map | `GOOGLE_MAPS_API_KEY` |
+
+### Email Infrastructure (Resend)
+
+**Active account:** `marybanks` Resend (multi-client agency account)
+
+**Active sending subdomain:** `notifications.projecteat.org` (live and verified as of 2026-05-06)
+
+**Required Railway env:**
+- `RESEND_API_KEY` = marybanks Resend API key (scope: Sending)
+- `EMAIL_FROM` = `noreply@notifications.projecteat.org`
+
+**Required GoDaddy DNS records (under projecteat.org):**
+- TXT `resend._domainkey.notifications` — DKIM public key
+- MX `send.notifications` — `feedback-smtp.us-east-1.amazonses.com` (priority 10)
+- TXT `send.notifications` — `v=spf1 include:amazonses.com ~all`
+
+**Do NOT use:**
+- `mail.projecteat.org` — locked on a different (lost) Resend account; "domain already registered" error blocks re-use
+- Apex `projecteat.org` as FROM domain — Status: Not Started in marybanks; would need separate `resend._domainkey` / `send` records added at GoDaddy
+- Any FROM address whose domain isn't verified in marybanks Resend → silent send rejection
+
+**Send-failure debugging:**
+1. Resend dashboard → Emails (Sending tab) — if zero entries, the API key isn't reaching marybanks (wrong/invalid key)
+2. Railway server logs — search for `[Email]` lines from `packages/server/src/email.ts:6-8`
+3. Verify `EMAIL_FROM` domain matches a Verified domain in marybanks Resend
 
 **All services degrade gracefully in development** — platform works without them locally.
 
