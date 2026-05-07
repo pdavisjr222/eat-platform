@@ -37,6 +37,10 @@ router.get("/api/members", authenticateToken, checkUserStatus, async (req: AuthR
         skills: users.skills,
         offerings: users.offerings,
         createdAt: users.createdAt,
+        // Public-status flags. emailVerified powers the "Verified" badge on
+        // member cards; role lets the UI flag admins/moderators publicly.
+        emailVerified: users.emailVerified,
+        role: users.role,
       })
       .from(users)
       .where(and(eq(users.isActive, true), eq(users.isBanned, false)))
@@ -91,6 +95,10 @@ router.get("/api/members/:id", authenticateToken, checkUserStatus, async (req: A
         skills: users.skills,
         offerings: users.offerings,
         createdAt: users.createdAt,
+        // Public-status flags. emailVerified powers the "Verified" badge on
+        // member cards; role lets the UI flag admins/moderators publicly.
+        emailVerified: users.emailVerified,
+        role: users.role,
       })
       .from(users)
       .where(eq(users.id, id))

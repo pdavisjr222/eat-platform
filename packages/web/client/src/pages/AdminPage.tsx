@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, ShieldOff, ShieldCheck, Trash2, Users, ShieldAlert } from "lucide-react";
+import { Search, ShieldOff, ShieldCheck, Trash2, Users, ShieldAlert, KeyRound, Clock } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface Member {
@@ -42,9 +42,30 @@ export default function AdminPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [confirmAction, setConfirmAction] = useState<{
-    type: "ban" | "unban" | "delete";
+    type: "ban" | "unban" | "delete" | "reset";
     member: Member;
   } | null>(null);
+
+  const formatJoinedAt = (iso: string): string => {
+    const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    const absolute = date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    if (diffHours < 1) return `Joined just now (${absolute})`;
+    if (diffHours < 24) return `Joined ${diffHours}h ago (${absolute})`;
+    if (diffDays < 30) return `Joined ${diffDays}d ago (${absolute})`;
+    return `Joined ${absolute}`;
+  };
 
   // Redirect non-admins
   if (user && (user as any).role !== "admin") {
@@ -53,7 +74,7 @@ export default function AdminPage() {
   }
 
   const { data: members, isLoading } = useQuery<{ data: Member[] }, Error, Member[]>({
-    queryKey: ["/api/members"],
+    queryKey: ["/api/admin/users"],
     select: (res) => res.data,
   });
 
@@ -63,7 +84,7 @@ export default function AdminPage() {
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/members"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({ title: "Member banned" });
       setConfirmAction(null);
     },
@@ -76,7 +97,7 @@ export default function AdminPage() {
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/members"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({ title: "Member unbanned" });
       setConfirmAction(null);
     },
@@ -89,11 +110,28 @@ export default function AdminPage() {
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/members"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({ title: "Member deleted" });
       setConfirmAction(null);
     },
     onError: () => toast({ title: "Failed to delete member", variant: "destructive" }),
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/admin/users/${id}/reset-password`);
+      return res.json() as Promise<{ success: boolean; emailSent: boolean; message: string }>;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data.emailSent ? "Reset email sent" : "Reset token created",
+        description: data.message,
+        variant: data.emailSent ? "default" : "destructive",
+      });
+      setConfirmAction(null);
+    },
+    onError: () =>
+      toast({ title: "Failed to send reset email", variant: "destructive" }),
   });
 
   const filtered = members?.filter((m) =>
@@ -192,12 +230,30 @@ export default function AdminPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                      {member.createdAt && (
+                        <p
+                          className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"
+                          title={new Date(member.createdAt).toString()}
+                        >
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{formatJoinedAt(member.createdAt)}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {/* Don't show actions for self or other admins */}
                   {member.id !== (user as any)?.id && member.role !== "admin" && (
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        onClick={() => setConfirmAction({ type: "reset", member })}
+                      >
+                        <KeyRound className="h-4 w-4 mr-1" />
+                        Reset Password
+                      </Button>
                       {member.isBanned ? (
                         <Button
                           size="sm"
@@ -243,6 +299,7 @@ export default function AdminPage() {
               {confirmAction?.type === "ban" && "Ban Member"}
               {confirmAction?.type === "unban" && "Unban Member"}
               {confirmAction?.type === "delete" && "Delete Member"}
+              {confirmAction?.type === "reset" && "Send Password Reset"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "ban" &&
@@ -251,6 +308,8 @@ export default function AdminPage() {
                 `Are you sure you want to unban ${confirmAction.member.name}? They will be able to log in again.`}
               {confirmAction?.type === "delete" &&
                 `Are you sure you want to permanently delete ${confirmAction.member.name}? This cannot be undone.`}
+              {confirmAction?.type === "reset" &&
+                `Send a password reset link to ${confirmAction.member.email}? Their existing password will continue to work until they complete the reset (link valid for 1 hour).`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -265,6 +324,8 @@ export default function AdminPage() {
                   unbanMutation.mutate(confirmAction.member.id);
                 } else if (confirmAction.type === "delete") {
                   deleteMutation.mutate(confirmAction.member.id);
+                } else if (confirmAction.type === "reset") {
+                  resetPasswordMutation.mutate(confirmAction.member.id);
                 }
               }}
             >
