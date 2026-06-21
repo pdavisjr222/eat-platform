@@ -242,48 +242,50 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Don't show actions for self */}
-                  {member.id !== (user as any)?.id && (
-                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        onClick={() => setConfirmAction({ type: "reset", member })}
-                      >
-                        <KeyRound className="h-4 w-4 mr-1" />
-                        Reset Password
-                      </Button>
-                      {member.isBanned ? (
+                  {/* Reset Password available for all users including self; Ban/Delete only for others */}
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      onClick={() => setConfirmAction({ type: "reset", member })}
+                    >
+                      <KeyRound className="h-4 w-4 mr-1" />
+                      Reset Password
+                    </Button>
+                    {member.id !== (user as any)?.id && (
+                      <>
+                        {member.isBanned ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setConfirmAction({ type: "unban", member })}
+                          >
+                            <ShieldCheck className="h-4 w-4 mr-1" />
+                            Unban
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                            onClick={() => setConfirmAction({ type: "ban", member })}
+                          >
+                            <ShieldOff className="h-4 w-4 mr-1" />
+                            Ban
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setConfirmAction({ type: "unban", member })}
+                          className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                          onClick={() => setConfirmAction({ type: "delete", member })}
                         >
-                          <ShieldCheck className="h-4 w-4 mr-1" />
-                          Unban
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                          onClick={() => setConfirmAction({ type: "ban", member })}
-                        >
-                          <ShieldOff className="h-4 w-4 mr-1" />
-                          Ban
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                        onClick={() => setConfirmAction({ type: "delete", member })}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
