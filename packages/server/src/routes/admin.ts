@@ -2,9 +2,11 @@ import { Router } from "express";
 import { db } from "../db";
 import {
   authenticateToken,
+  generatePasswordResetToken,
   sanitizeUser,
   type AuthRequest,
 } from "../auth";
+import { sendPasswordResetEmail } from "../email";
 import {
   checkUserStatus,
   requireAdmin,
@@ -63,8 +65,8 @@ router.post("/api/admin/users/:id/ban", authenticateToken, checkUserStatus, requ
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.role === "admin") {
-      return res.status(403).json({ error: "Cannot ban admin users" });
+    if (id === req.userId) {
+      return res.status(403).json({ error: "Cannot ban your own account" });
     }
 
     await db
@@ -140,6 +142,58 @@ router.post("/api/admin/users/:id/role", authenticateToken, checkUserStatus, req
   }
 });
 
+router.post(
+  "/api/admin/users/:id/reset-password",
+  authenticateToken,
+  checkUserStatus,
+  requireAdmin,
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const resetData = generatePasswordResetToken();
+
+      await db
+        .update(users)
+        .set({
+          passwordResetToken: resetData.token,
+          passwordResetExpires: resetData.expires,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+
+      const emailSent = await sendPasswordResetEmail(user.email, user.name, resetData.token);
+
+      await logAuditAction(
+        req.userId!,
+        "admin_reset_password",
+        "user",
+        id,
+        {},
+        { targetEmail: user.email, emailSent },
+        req
+      );
+
+      res.json({
+        success: true,
+        emailSent,
+        message: emailSent
+          ? `Password reset email sent to ${user.email}`
+          : "Reset token created but email could not be sent. Check email service configuration.",
+      });
+    } catch (error: unknown) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  }
+);
+
 router.get("/api/admin/audit-logs", authenticateToken, checkUserStatus, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { page, limit, offset } = getPaginationParams(req);
@@ -205,10 +259,6 @@ router.delete("/api/admin/users/:id", authenticateToken, checkUserStatus, requir
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
-    }
-
-    if (user.role === "admin") {
-      return res.status(403).json({ error: "Cannot delete admin users" });
     }
 
     if (id === req.userId) {

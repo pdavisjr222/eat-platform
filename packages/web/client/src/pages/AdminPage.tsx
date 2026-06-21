@@ -242,8 +242,8 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Don't show actions for self or other admins */}
-                  {member.id !== (user as any)?.id && member.role !== "admin" && (
+                  {/* Don't show actions for self */}
+                  {member.id !== (user as any)?.id && (
                     <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                       <Button
                         size="sm"
